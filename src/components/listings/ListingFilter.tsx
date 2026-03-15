@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import type { FilterState } from '@/types';
 import Button from '@/components/ui/Button';
+import { SEOUL_DISTRICT_NAMES } from '@/data/districts';
 import styles from './ListingFilter.module.scss';
 
-const DISTRICTS = [
-  '서울 서초구', '서울 강남구', '서울 마포구', '서울 성동구',
-  '서울 용산구', '서울 송파구', '서울 영등포구', '서울 노원구',
-];
+const DISTRICTS = SEOUL_DISTRICT_NAMES;
 
 interface ListingFilterProps {
   filter: FilterState;

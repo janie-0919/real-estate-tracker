@@ -3,6 +3,7 @@ import type { AlertCondition } from '@/types';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { formatDate } from '@/utils/format';
+import { SEOUL_DISTRICT_NAMES } from '@/data/districts';
 import styles from './AlertsPage.module.scss';
 
 const DEMO_ALERTS: AlertCondition[] = [
@@ -32,10 +33,7 @@ const DEMO_ALERTS: AlertCondition[] = [
   },
 ];
 
-const DISTRICTS = [
-  '서울 서초구', '서울 강남구', '서울 마포구', '서울 성동구',
-  '서울 용산구', '서울 송파구', '서울 영등포구', '서울 노원구',
-];
+const DISTRICTS = SEOUL_DISTRICT_NAMES;
 
 const defaultForm: Omit<AlertCondition, 'id' | 'createdAt'> = {
   name: '',

@@ -57,7 +57,10 @@ export default function HomePage() {
           </form>
           <div className={styles.quickLinks}>
             <span>빠른 검색:</span>
-            {['서울 강남구', '서울 서초구', '서울 마포구', '서울 성동구'].map(d => (
+            {[
+              '서울 강남구', '서울 서초구', '서울 마포구', '서울 성동구',
+              '서울 용산구', '서울 송파구', '서울 영등포구', '서울 노원구',
+            ].map(d => (
               <Link key={d} to={`/listings?district=${encodeURIComponent(d)}`} className={styles.quickLink}>
                 {d.replace('서울 ', '')}
               </Link>

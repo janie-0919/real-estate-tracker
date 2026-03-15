@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { SEOUL_DISTRICT_NAMES } from '@/data/districts';
 import styles from './Sidebar.module.scss';
 
 const NAV_ITEMS = [
@@ -45,10 +46,7 @@ const NAV_ITEMS = [
   },
 ];
 
-const DISTRICT_SHORTCUTS = [
-  '서울 서초구', '서울 강남구', '서울 마포구',
-  '서울 성동구', '서울 용산구', '서울 송파구',
-];
+const DISTRICT_SHORTCUTS = SEOUL_DISTRICT_NAMES;
 
 export default function Sidebar() {
   return (
