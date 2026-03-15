@@ -1,7 +1,9 @@
 /**
  * 국토교통부 실거래가 공공데이터 서비스
- * API 문서: https://www.data.go.kr/data/15058747/openapi.do (아파트매매실거래상세)
- *          https://www.data.go.kr/data/15058017/openapi.do (아파트전월세)
+ * - 개발계정: RTMSDataSvcAptTradeDev  (일일 1,000건 제한)
+ * - 운영계정: RTMSDataSvcAptTrade     (제한 없음)
+ *
+ * API 문서: https://www.data.go.kr/data/15058747/openapi.do
  */
 import axios from 'axios';
 import xml2js from 'xml2js';
@@ -9,6 +11,11 @@ import type { MolitSaleRaw, MolitLeaseRaw, Transaction } from '../types.js';
 
 const BASE_URL = 'https://apis.data.go.kr/1613000';
 const SERVICE_KEY = process.env.MOLIT_API_KEY ?? '';
+
+// 개발계정은 Dev 엔드포인트 사용 (운영계정은 false로 변경)
+const IS_DEV = process.env.MOLIT_ENV !== 'production';
+const SALE_ENDPOINT  = IS_DEV ? 'RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev'  : 'RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade';
+const LEASE_ENDPOINT = IS_DEV ? 'RTMSDataSvcAptRentDev/getRTMSDataSvcAptRentDev'    : 'RTMSDataSvcAptRent/getRTMSDataSvcAptRent';
 
 const parser = new xml2js.Parser({ explicitArray: false, trim: true });
 
@@ -45,7 +52,7 @@ export async function fetchSaleTransactions(
   yearMonth: string, // "202401"
 ): Promise<Transaction[]> {
   const res = await axios.get(
-    `${BASE_URL}/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade`,
+    `${BASE_URL}/${SALE_ENDPOINT}`,
     {
       params: {
         serviceKey: SERVICE_KEY,
@@ -94,7 +101,7 @@ export async function fetchLeaseTransactions(
   yearMonth: string,
 ): Promise<Transaction[]> {
   const res = await axios.get(
-    `${BASE_URL}/RTMSDataSvcAptRent/getRTMSDataSvcAptRent`,
+    `${BASE_URL}/${LEASE_ENDPOINT}`,
     {
       params: {
         serviceKey: SERVICE_KEY,
