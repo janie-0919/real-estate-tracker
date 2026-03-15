@@ -1,0 +1,237 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  @include flex(column, flex-start, stretch, $spacing-4);
+  padding-bottom: $spacing-16;
+}
+
+.pageHeader {
+  @include flex(row, space-between, flex-start);
+}
+
+.title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+}
+
+.searchQuery {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-top: $spacing-1;
+}
+
+.resultCount {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  white-space: nowrap;
+
+  strong {
+    color: $color-primary-600;
+    font-weight: $font-weight-bold;
+    font-size: $font-size-lg;
+  }
+}
+
+// Toolbar
+.toolbar {
+  @include flex(row, space-between, center);
+  flex-wrap: wrap;
+  gap: $spacing-3;
+}
+
+.sortGroup {
+  @include flex(row, flex-start, center, $spacing-1);
+  flex-wrap: wrap;
+}
+
+.sortBtn {
+  @include button-reset;
+  padding: $spacing-1 $spacing-3;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-bg-surface;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-primary-300;
+    color: $color-primary-700;
+    background: $color-primary-50;
+  }
+
+  &.active {
+    border-color: $color-primary-600;
+    color: $color-primary-700;
+    background: $color-primary-50;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.viewToggle {
+  @include flex(row, flex-start, center);
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.viewBtn {
+  @include button-reset;
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  border-right: 1px solid $color-border;
+  transition: background $transition-fast, color $transition-fast;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover {
+    background: $color-gray-100;
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: $color-primary-600;
+    color: white;
+  }
+}
+
+// Card grid
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-5;
+
+  @media (max-width: #{$bp-xl}) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: #{$bp-md}) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Table
+.tableWrapper {
+  @include card;
+  overflow: auto;
+  @include scrollbar-thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  th {
+    padding: $spacing-3 $spacing-4;
+    text-align: left;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: $color-gray-50;
+    border-bottom: 1px solid $color-border;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: $spacing-3 $spacing-4;
+    border-bottom: 1px solid $color-gray-100;
+    color: $color-text-primary;
+    white-space: nowrap;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: $color-gray-50;
+  }
+}
+
+.tableLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.complexCell {
+  @include flex(column, flex-start, stretch, $spacing-1);
+}
+
+.complexName {
+  font-weight: $font-weight-semibold;
+  color: $color-primary-700;
+}
+
+.addressText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.priceCell {
+  @include flex(column, flex-start, flex-start, $spacing-1);
+}
+
+.priceValue {
+  font-weight: $font-weight-bold;
+}
+
+.priceUp {
+  font-size: $font-size-xs;
+  color: $color-price-up;
+  font-weight: $font-weight-medium;
+}
+
+.priceDown {
+  font-size: $font-size-xs;
+  color: $color-price-down;
+  font-weight: $font-weight-medium;
+}
+
+.deviationLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+// Infinite scroll loader
+.loader {
+  @include flex-center;
+  padding: $spacing-8;
+}
+
+.loaderText {
+  @include flex(row, flex-start, center, $spacing-2);
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid $color-primary-300;
+    border-top-color: $color-primary-600;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.endMessage {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: $spacing-6;
+}

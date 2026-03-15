@@ -1,0 +1,115 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.btn {
+  @include flex(row, center, center, $spacing-2);
+  @include button-reset;
+  border-radius: $radius-md;
+  font-weight: $font-weight-medium;
+  transition: background $transition-fast, color $transition-fast, border-color $transition-fast, box-shadow $transition-fast;
+  white-space: nowrap;
+  position: relative;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.sm {
+  padding: $spacing-1 $spacing-3;
+  font-size: $font-size-sm;
+  height: 32px;
+}
+
+.md {
+  padding: $spacing-2 $spacing-4;
+  font-size: $font-size-md;
+  height: 40px;
+}
+
+.lg {
+  padding: $spacing-3 $spacing-6;
+  font-size: $font-size-base;
+  height: 48px;
+}
+
+.primary {
+  background: $color-primary-600;
+  color: $color-text-inverse;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-700;
+  }
+
+  &:active:not(:disabled) {
+    background: $color-primary-800;
+  }
+}
+
+.secondary {
+  background: $color-gray-100;
+  color: $color-text-primary;
+
+  &:hover:not(:disabled) {
+    background: $color-gray-200;
+  }
+}
+
+.ghost {
+  background: transparent;
+  color: $color-text-secondary;
+
+  &:hover:not(:disabled) {
+    background: $color-gray-100;
+    color: $color-text-primary;
+  }
+}
+
+.danger {
+  background: $color-danger-600;
+  color: $color-text-inverse;
+
+  &:hover:not(:disabled) {
+    background: $color-danger-700;
+  }
+}
+
+.outline {
+  background: transparent;
+  color: $color-primary-600;
+  border: 1px solid $color-primary-300;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-50;
+  }
+}
+
+.loading {
+  pointer-events: none;
+}
+
+.iconLeft,
+.iconRight {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}

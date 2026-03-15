@@ -1,0 +1,130 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-normal;
+  color: $color-text-primary;
+  background-color: $color-bg-base;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
+}
+
+// Focus visible
+:focus-visible {
+  @include focus-ring;
+}
+
+// Scrollbar (apply to body)
+body {
+  @include scrollbar-thin;
+}
+
+// Utility classes
+.sr-only {
+  @include visually-hidden;
+}
+
+.price-up {
+  color: $color-price-up;
+  font-weight: $font-weight-semibold;
+}
+
+.price-down {
+  color: $color-price-down;
+  font-weight: $font-weight-semibold;
+}
+
+.price-neutral {
+  color: $color-price-neutral;
+}
+
+// Loading skeleton animation
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    $color-gray-100 25%,
+    $color-gray-200 50%,
+    $color-gray-100 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: $radius-sm;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease;
+}

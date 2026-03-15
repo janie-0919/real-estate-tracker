@@ -1,0 +1,94 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  @include flex(column, flex-start, stretch, $spacing-6);
+  padding-bottom: $spacing-12;
+}
+
+.header {
+  @include flex(row, space-between, flex-end);
+}
+
+.title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-1;
+}
+
+.sub {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.count {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-5;
+
+  @media (max-width: #{$bp-lg}) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: #{$bp-sm}) { grid-template-columns: 1fr; }
+}
+
+.listingWrapper {
+  @include flex(column, flex-start, stretch);
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  border: 1px solid $color-border;
+}
+
+.noteSection {
+  background: $color-gray-50;
+  border-top: 1px solid $color-gray-100;
+  padding: $spacing-2 $spacing-3;
+}
+
+.noteEdit {
+  @include flex(column, flex-start, stretch, $spacing-2);
+}
+
+.noteInput {
+  width: 100%;
+  padding: $spacing-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-family: inherit;
+  resize: none;
+  background: white;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary-400;
+  }
+}
+
+.noteBtn {
+  @include button-reset;
+  width: 100%;
+  text-align: left;
+  padding: $spacing-1;
+}
+
+.noteText {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.notePlaceholder {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  &:hover { color: $color-primary-600; }
+}
+
+.footer {
+  @include flex(row, flex-end, center);
+}

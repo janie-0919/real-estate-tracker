@@ -1,0 +1,224 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  @include flex(column, flex-start, stretch, $spacing-6);
+  padding-bottom: $spacing-12;
+}
+
+.header {
+  @include flex(row, space-between, flex-start);
+}
+
+.title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-1;
+}
+
+.sub {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+// Form
+.formCard {
+  @include card;
+  padding: $spacing-6;
+}
+
+.formTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-5;
+}
+
+.form {
+  @include flex(column, flex-start, stretch, $spacing-4);
+}
+
+.formRow {
+  @include flex(row, flex-start, flex-start, $spacing-4);
+  flex-wrap: wrap;
+
+  .formGroup {
+    flex: 1;
+    min-width: 160px;
+  }
+}
+
+.formGroup {
+  @include flex(column, flex-start, stretch, $spacing-2);
+}
+
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.input {
+  height: 40px;
+  padding: 0 $spacing-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  background: $color-bg-surface;
+  transition: border-color $transition-fast;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary-400;
+  }
+
+  &::placeholder { color: $color-text-secondary; }
+}
+
+.select {
+  height: 40px;
+  padding: 0 $spacing-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  background: $color-bg-surface;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary-400;
+  }
+}
+
+.chipGroup {
+  @include flex(row, flex-start, center, $spacing-2);
+  flex-wrap: wrap;
+}
+
+.chip {
+  @include button-reset;
+  padding: $spacing-1 $spacing-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  transition: all $transition-fast;
+
+  &:hover { border-color: $color-primary-300; color: $color-primary-700; }
+  &.chipActive { border-color: $color-primary-600; color: $color-primary-700; background: $color-primary-50; font-weight: $font-weight-medium; }
+}
+
+.rangeRow {
+  @include flex(row, flex-start, center, $spacing-2);
+  .input { flex: 1; }
+}
+
+.sep { color: $color-text-secondary; }
+
+.channelGroup {
+  @include flex(row, flex-start, center, $spacing-4);
+}
+
+.channelLabel {
+  @include flex(row, flex-start, center, $spacing-2);
+  font-size: $font-size-md;
+  cursor: pointer;
+
+  input { accent-color: $color-primary-600; }
+}
+
+.formActions {
+  @include flex(row, flex-start, center, $spacing-3);
+  padding-top: $spacing-2;
+  border-top: 1px solid $color-border;
+}
+
+// Alert list
+.alertList {
+  @include flex(column, flex-start, stretch, $spacing-3);
+}
+
+.empty {
+  @include flex(column, center, center, $spacing-2);
+  padding: $spacing-12;
+  text-align: center;
+  font-size: $font-size-base;
+  color: $color-text-secondary;
+}
+
+.emptySub {
+  font-size: $font-size-sm;
+  max-width: 360px;
+  line-height: $line-height-relaxed;
+}
+
+.alertCard {
+  @include card;
+  padding: $spacing-4 $spacing-5;
+  @include flex(row, space-between, center, $spacing-4);
+  transition: opacity $transition-base;
+
+  &.inactive {
+    opacity: 0.6;
+  }
+}
+
+.alertMain {
+  flex: 1;
+  @include flex(column, flex-start, stretch, $spacing-3);
+}
+
+.alertHeader {
+  @include flex(row, flex-start, center, $spacing-3);
+}
+
+.alertName {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+}
+
+.alertConditions {
+  @include flex(row, flex-start, center, $spacing-2);
+  flex-wrap: wrap;
+}
+
+.alertMeta {
+  @include flex(row, flex-start, center, $spacing-4);
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.alertActions {
+  @include flex(row, flex-start, center, $spacing-2);
+  flex-shrink: 0;
+}
+
+.toggleBtn {
+  @include button-reset;
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  transition: background $transition-fast;
+
+  &:hover { background: $color-gray-100; }
+}
+
+.deleteBtn {
+  @include button-reset;
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-danger-600;
+    background: $color-danger-50;
+  }
+}

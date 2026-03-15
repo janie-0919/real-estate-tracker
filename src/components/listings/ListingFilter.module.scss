@@ -1,0 +1,170 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.container {
+  @include card;
+  padding: $spacing-4;
+  margin-bottom: $spacing-4;
+}
+
+.quickFilters {
+  @include flex(row, flex-start, flex-end, $spacing-6);
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  @include flex(column, flex-start, stretch, $spacing-2);
+}
+
+.groupLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toggleGroup {
+  @include flex(row, flex-start, center);
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.toggle {
+  @include button-reset;
+  padding: $spacing-2 $spacing-3;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  border-right: 1px solid $color-border;
+  transition: background $transition-fast, color $transition-fast;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover {
+    background: $color-gray-50;
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: $color-primary-600;
+    color: white;
+  }
+}
+
+.checkboxGroup {
+  @include flex(row, flex-start, center, $spacing-4);
+}
+
+.checkbox {
+  @include flex(row, flex-start, center, $spacing-2);
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: $color-primary-600;
+    cursor: pointer;
+  }
+}
+
+.filterActions {
+  @include flex(row, flex-start, center, $spacing-2);
+  margin-left: auto;
+}
+
+.expandBtn {
+  @include button-reset;
+  @include flex(row, flex-start, center, $spacing-2);
+  padding: $spacing-2 $spacing-3;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-primary-600;
+  border: 1px solid $color-primary-200;
+  border-radius: $radius-md;
+  background: $color-primary-50;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-primary-100;
+  }
+}
+
+.expandedFilters {
+  margin-top: $spacing-4;
+  padding-top: $spacing-4;
+  border-top: 1px solid $color-border;
+  @include flex(column, flex-start, stretch, $spacing-4);
+}
+
+.districtGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-2;
+}
+
+.districtBtn {
+  @include button-reset;
+  padding: $spacing-1 $spacing-3;
+  font-size: $font-size-sm;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-primary-300;
+    color: $color-primary-700;
+    background: $color-primary-50;
+  }
+
+  &.active {
+    border-color: $color-primary-600;
+    color: $color-primary-700;
+    background: $color-primary-50;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.rangeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: $spacing-4;
+}
+
+.rangeRow {
+  @include flex(row, flex-start, center, $spacing-2);
+}
+
+.rangeInput {
+  width: 100%;
+  height: 36px;
+  padding: 0 $spacing-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-bg-surface;
+  transition: border-color $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary-400;
+  }
+
+  &::placeholder {
+    color: $color-text-secondary;
+  }
+}
+
+.rangeSep {
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}

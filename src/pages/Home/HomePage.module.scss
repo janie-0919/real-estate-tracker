@@ -1,0 +1,266 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  @include flex(column, flex-start, stretch, $spacing-8);
+  padding-bottom: $spacing-16;
+}
+
+// Hero
+.hero {
+  background: linear-gradient(135deg, $color-primary-700 0%, $color-primary-900 100%);
+  border-radius: $radius-xl;
+  padding: $spacing-12 $spacing-8;
+  color: white;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+  }
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+}
+
+.heroTitle {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-snug;
+  margin-bottom: $spacing-4;
+
+  @media (max-width: #{$bp-md}) {
+    font-size: $font-size-2xl;
+  }
+}
+
+.highlight {
+  color: #93c5fd;
+}
+
+.heroSub {
+  font-size: $font-size-base;
+  opacity: 0.85;
+  margin-bottom: $spacing-6;
+  line-height: $line-height-relaxed;
+}
+
+.heroSearch {
+  margin-bottom: $spacing-4;
+}
+
+.searchBox {
+  @include flex(row, flex-start, center);
+  background: white;
+  border-radius: $radius-full;
+  padding: $spacing-1 $spacing-1 $spacing-1 $spacing-4;
+  gap: $spacing-3;
+
+  svg {
+    color: $color-gray-400;
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: $font-size-base;
+    color: $color-text-primary;
+    background: transparent;
+
+    &::placeholder {
+      color: $color-text-secondary;
+      font-size: $font-size-md;
+    }
+  }
+
+  button {
+    @include button-reset;
+    padding: $spacing-2 $spacing-6;
+    background: $color-primary-600;
+    color: white;
+    border-radius: $radius-full;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    transition: background $transition-fast;
+
+    &:hover {
+      background: $color-primary-700;
+    }
+  }
+}
+
+.quickLinks {
+  @include flex(row, flex-start, center, $spacing-2);
+  flex-wrap: wrap;
+  font-size: $font-size-sm;
+  opacity: 0.8;
+}
+
+.quickLink {
+  padding: $spacing-1 $spacing-3;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  color: white;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+// Section
+.section {
+  @include flex(column, flex-start, stretch, $spacing-4);
+}
+
+.sectionHeader {
+  @include flex(row, space-between, center);
+}
+
+.sectionTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  @include flex(row, flex-start, center, $spacing-2);
+}
+
+.seeAll {
+  font-size: $font-size-sm;
+  color: $color-primary-600;
+  font-weight: $font-weight-medium;
+
+  &:hover {
+    color: $color-primary-700;
+    text-decoration: underline;
+  }
+}
+
+.upIcon { color: $color-price-up; }
+.downIcon { color: $color-price-down; }
+.flashIcon { font-size: $font-size-lg; }
+.newIcon { font-size: $font-size-base; }
+
+// Stat grid
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-4;
+
+  @media (max-width: #{$bp-lg}) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: #{$bp-sm}) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  @include card;
+  padding: $spacing-5;
+}
+
+.statLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-2;
+}
+
+.statValue {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-1;
+}
+
+.statChange {
+  font-size: $font-size-xs;
+
+  &.positive { color: $color-price-up; }
+  &.negative { color: $color-price-down; }
+}
+
+// Region table
+.regionTable {
+  @include card;
+  overflow: hidden;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+      padding: $spacing-3 $spacing-4;
+      text-align: left;
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      color: $color-text-secondary;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: $color-gray-50;
+      border-bottom: 1px solid $color-border;
+    }
+
+    td {
+      padding: $spacing-3 $spacing-4;
+      font-size: $font-size-md;
+      color: $color-text-primary;
+      border-bottom: 1px solid $color-gray-50;
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: $color-gray-50;
+    }
+  }
+}
+
+.districtLink {
+  color: $color-primary-600;
+  font-weight: $font-weight-medium;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.up { color: $color-price-up; font-weight: $font-weight-semibold; }
+.down { color: $color-price-down; font-weight: $font-weight-semibold; }
+
+// Listing grid
+.listingGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-4;
+
+  @media (max-width: #{$bp-xl}) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: #{$bp-lg}) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: #{$bp-sm}) {
+    grid-template-columns: 1fr;
+  }
+}

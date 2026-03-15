@@ -1,0 +1,144 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  min-height: 100vh;
+  @include flex-center;
+  background: linear-gradient(135deg, $color-primary-50 0%, $color-bg-base 100%);
+  padding: $spacing-6;
+}
+
+.container {
+  width: 100%;
+  max-width: 400px;
+  @include flex(column, flex-start, center, $spacing-6);
+}
+
+.logo {
+  @include flex(row, flex-start, center, $spacing-3);
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary-700;
+  text-decoration: none;
+}
+
+.card {
+  width: 100%;
+  @include card;
+  padding: $spacing-6;
+}
+
+.tabs {
+  @include flex(row, flex-start, center);
+  border-bottom: 2px solid $color-border;
+  margin-bottom: $spacing-5;
+}
+
+.tabBtn {
+  @include button-reset;
+  padding: $spacing-3 $spacing-6;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color $transition-fast, border-color $transition-fast;
+
+  &:hover { color: $color-text-primary; }
+  &.active { color: $color-primary-600; border-bottom-color: $color-primary-600; font-weight: $font-weight-semibold; }
+}
+
+.form {
+  @include flex(column, flex-start, stretch, $spacing-4);
+}
+
+.formGroup {
+  @include flex(column, flex-start, stretch, $spacing-2);
+}
+
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.input {
+  height: 44px;
+  padding: 0 $spacing-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  color: $color-text-primary;
+  background: $color-bg-surface;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary-400;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  &::placeholder { color: $color-text-secondary; }
+}
+
+.forgotRow {
+  @include flex(row, flex-end, center);
+  margin-top: -$spacing-2;
+}
+
+.forgotLink {
+  font-size: $font-size-sm;
+  color: $color-primary-600;
+  &:hover { text-decoration: underline; }
+}
+
+.divider {
+  @include flex(row, center, center);
+  position: relative;
+  margin: $spacing-4 0;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $color-border;
+    margin: 0 $spacing-3;
+  }
+}
+
+.socialBtns {
+  @include flex(column, flex-start, stretch, $spacing-3);
+}
+
+.socialBtn {
+  @include button-reset;
+  @include flex(row, center, center, $spacing-3);
+  height: 44px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  background: white;
+  color: $color-text-primary;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background: $color-gray-50;
+    border-color: $color-gray-300;
+  }
+}
+
+.terms {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  text-align: center;
+  line-height: $line-height-relaxed;
+
+  a {
+    color: $color-primary-600;
+    &:hover { text-decoration: underline; }
+  }
+}

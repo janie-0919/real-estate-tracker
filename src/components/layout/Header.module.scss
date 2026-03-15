@@ -1,0 +1,124 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: $z-sticky;
+  height: $layout-header-height;
+  background: $color-bg-surface;
+  border-bottom: 1px solid $color-border;
+  box-shadow: $shadow-xs;
+}
+
+.inner {
+  @include flex(row, space-between, center, $spacing-4);
+  height: 100%;
+  padding: 0 $spacing-6;
+  max-width: $layout-max-width;
+  margin: 0 auto;
+}
+
+.logo {
+  @include flex(row, flex-start, center, $spacing-2);
+  flex-shrink: 0;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary-700;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-primary-600;
+  }
+}
+
+.logoText {
+  @media (max-width: #{$bp-md}) {
+    display: none;
+  }
+}
+
+.searchForm {
+  flex: 1;
+  max-width: 480px;
+  margin: 0 $spacing-4;
+
+  @media (max-width: #{$bp-sm}) {
+    display: none;
+  }
+}
+
+.searchBox {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: $spacing-3;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $color-text-secondary;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 40px;
+  padding: 0 $spacing-4 0 $spacing-8;
+  background: $color-gray-50;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  transition: border-color $transition-base, box-shadow $transition-base;
+
+  &::placeholder {
+    color: $color-text-secondary;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary-400;
+    background: $color-bg-surface;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.nav {
+  @include flex(row, flex-start, center, $spacing-2);
+  flex-shrink: 0;
+}
+
+.navLink {
+  padding: $spacing-2 $spacing-3;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-text-primary;
+    background: $color-gray-100;
+  }
+
+  @media (max-width: #{$bp-md}) {
+    display: none;
+  }
+}
+
+.loginBtn {
+  padding: $spacing-2 $spacing-4;
+  background: $color-primary-600;
+  color: $color-text-inverse;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-primary-700;
+  }
+}

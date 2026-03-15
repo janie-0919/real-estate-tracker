@@ -1,0 +1,182 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card {
+  @include card;
+  overflow: hidden;
+  transition: box-shadow $transition-base, transform $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
+}
+
+.thumbnail {
+  position: relative;
+  height: 200px;
+  background: $color-gray-100;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform $transition-slow;
+  }
+
+  .card:hover & img {
+    transform: scale(1.03);
+  }
+}
+
+.thumbnailBadges {
+  position: absolute;
+  top: $spacing-3;
+  left: $spacing-3;
+  @include flex(row, flex-start, center, $spacing-1);
+  flex-wrap: wrap;
+}
+
+.dealTypeBadge {
+  padding: 2px $spacing-2;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.deal-sale {
+  background: $color-primary-600;
+  color: white;
+}
+
+.deal-lease {
+  background: $color-success-600;
+  color: white;
+}
+
+.deal-monthly {
+  background: $color-warning-600;
+  color: white;
+}
+
+.warningBadge {
+  padding: 2px $spacing-2;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  background: $color-danger-600;
+  color: white;
+}
+
+.favoriteBtn {
+  @include button-reset;
+  position: absolute;
+  top: $spacing-3;
+  right: $spacing-3;
+  width: 32px;
+  height: 32px;
+  @include flex-center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: $radius-full;
+  color: $color-gray-400;
+  transition: color $transition-fast, background $transition-fast;
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    color: $color-danger-500;
+    background: white;
+  }
+
+  &.favorited {
+    color: $color-danger-500;
+  }
+}
+
+.content {
+  padding: $spacing-4;
+  @include flex(column, flex-start, stretch, $spacing-3);
+}
+
+.header {
+  @include flex(column, flex-start, stretch, $spacing-1);
+}
+
+.complexName {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include truncate(1);
+}
+
+.address {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.priceRow {
+  @include flex(row, space-between, baseline, $spacing-2);
+}
+
+.price {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.priceChange {
+  @include flex(row, flex-start, center, $spacing-1);
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.priceUp { color: $color-price-up; }
+.priceDown { color: $color-price-down; }
+.priceNeutral { color: $color-price-neutral; }
+
+.deviationRow {
+  @include flex(row, flex-start, center, $spacing-2);
+  flex-wrap: wrap;
+}
+
+.deviationBadge {
+  padding: 2px $spacing-2;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  border: 1px solid;
+}
+
+.deviationLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.tags {
+  @include flex(row, flex-start, center, $spacing-1);
+  flex-wrap: wrap;
+}
+
+.footer {
+  @include flex(row, space-between, center);
+  padding-top: $spacing-2;
+  border-top: 1px solid $color-gray-100;
+}
+
+.date {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.agent {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  @include truncate(1);
+  max-width: 120px;
+}

@@ -1,0 +1,92 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.sidebar {
+  position: fixed;
+  top: $layout-header-height;
+  left: 0;
+  bottom: 0;
+  width: $layout-sidebar-width;
+  background: $color-bg-surface;
+  border-right: 1px solid $color-border;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: $z-sticky - 1;
+  @include scrollbar-thin;
+
+  @media (max-width: #{$bp-lg}) {
+    display: none;
+  }
+}
+
+.nav {
+  flex: 1;
+  padding: $spacing-4 $spacing-3;
+}
+
+.section {
+  margin-bottom: $spacing-6;
+}
+
+.sectionLabel {
+  padding: 0 $spacing-3;
+  margin-bottom: $spacing-2;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $color-text-secondary;
+}
+
+.navList {
+  @include flex(column, flex-start, stretch, $spacing-1);
+}
+
+.navItem {
+  @include flex(row, flex-start, center, $spacing-3);
+  padding: $spacing-2 $spacing-3;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  transition: background $transition-fast, color $transition-fast;
+  cursor: pointer;
+
+  &:hover {
+    background: $color-gray-100;
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: $color-primary-50;
+    color: $color-primary-700;
+
+    .icon {
+      color: $color-primary-600;
+    }
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: $color-gray-400;
+}
+
+.districtName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-regular;
+}
+
+.footer {
+  padding: $spacing-4 $spacing-4;
+  border-top: 1px solid $color-border;
+}
+
+.updateInfo {
+  @include flex(row, flex-start, center, $spacing-1);
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}

@@ -1,0 +1,33 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    $color-gray-100 25%,
+    $color-gray-200 50%,
+    $color-gray-100 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: $radius-sm;
+}
+
+.card {
+  @include card;
+  overflow: hidden;
+}
+
+.body {
+  padding: $spacing-4;
+  @include flex(column, flex-start, stretch, $spacing-3);
+}
+
+.row {
+  @include flex(row, space-between, center, $spacing-2);
+}
