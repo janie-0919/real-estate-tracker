@@ -179,6 +179,33 @@
 .tableLink { color: $color-primary-600; &:hover { text-decoration: underline; } }
 .currentRow { background: $color-primary-50 !important; }
 
+.chartTitleRow {
+  @include flex(row, space-between, center);
+  flex-wrap: wrap;
+  gap: $spacing-2;
+}
+
+.dataSource {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  padding: $spacing-1 $spacing-2;
+  background: $color-gray-100;
+  border-radius: $radius-sm;
+}
+
+.noDataChart {
+  @include flex-center;
+  height: 200px;
+  background: $color-gray-50;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+}
+
+.loadingArea {
+  @include flex(column, flex-start, stretch, $spacing-3);
+}
+
 // Transaction
 .deviationBox {
   @include flex(row, space-around, center);

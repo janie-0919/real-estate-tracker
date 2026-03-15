@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine, Scatter, ComposedChart,
 } from 'recharts';
 import { mockListings, mockComplexes } from '@/data/mockListings';
 import {
   formatPrice, formatArea, formatDate, formatDateShort, formatBuildYear,
   formatDealType, formatDeviation, formatPriceChange, getDeviationColor,
 } from '@/utils/format';
+import { useTransactions, useDeviation, toChartData } from '@/hooks/useTransactions';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import NotFoundPage from '@/pages/NotFound/NotFoundPage';
 import styles from './ListingDetailPage.module.scss';
 
@@ -24,30 +27,41 @@ export default function ListingDetailPage() {
 
   const complex = mockComplexes.find(c => c.id === listing.complexId);
   const sameComplexListings = mockListings.filter(
-    l => l.complexId === listing.complexId && l.id !== listing.id && l.area === listing.area
+    l => l.complexId === listing.complexId && l.id !== listing.id && l.area === listing.area,
   );
 
-  const deviationColor = getDeviationColor(listing.deviationFromActual ?? 0);
-  const actualTransactionAvg = complex?.recentTransactions
-    .filter(t => Math.abs(t.area - listing.area) < 5)
-    .reduce((sum, t, _, arr) => sum + t.price / arr.length, 0) ?? 0;
+  // ── 실거래가 (공공 API) ─────────────────────────────────────────
+  const { data: realTransactions, isLoading: txLoading } = useTransactions({
+    district: listing.district,
+    complex: listing.complexName,
+    area: listing.area,
+    dealType: 'sale',
+    enabled: activeTab === 'transaction',
+  });
 
-  // Prepare chart data
+  // ── 괴리율 (실거래 기반 자동 계산) ──────────────────────────────
+  const { data: deviationData, isLoading: devLoading } = useDeviation({
+    district: listing.district,
+    complex: listing.complexName,
+    area: listing.area,
+    listingPrice: listing.price,
+  });
+
+  // 괴리율: 실데이터 우선, 없으면 mock
+  const deviationPct  = deviationData?.deviationPct  ?? listing.deviationFromActual ?? 0;
+  const deviationLabel = deviationData?.label         ?? listing.deviationLabel ?? '';
+  const actualAvgPrice = deviationData?.actualAvgPrice ?? 0;
+  const deviationColor = getDeviationColor(deviationPct);
+
+  // 실거래 차트 데이터
+  const realTxChart = realTransactions ? toChartData(realTransactions) : [];
+
+  // 호가 이력 차트
   const priceHistoryChart = listing.priceHistory.map(h => ({
     date: formatDateShort(h.date),
     price: h.price,
-    priceEok: (h.price / 10000).toFixed(2),
     note: h.note,
   }));
-
-  // Actual transaction chart
-  const transactionChart = complex?.recentTransactions
-    .filter(t => Math.abs(t.area - listing.area) < 10)
-    .map(t => ({
-      date: formatDateShort(t.date),
-      price: t.price,
-      floor: t.floor,
-    })) ?? [];
 
   return (
     <div className={styles.page}>
@@ -114,13 +128,10 @@ export default function ListingDetailPage() {
                         tickFormatter={v => `${(v / 10000).toFixed(0)}억`}
                         domain={['auto', 'auto']}
                       />
-                      <Tooltip
-                        formatter={(val: number) => [formatPrice(val), '호가']}
-                        labelFormatter={label => `날짜: ${label}`}
-                      />
-                      {actualTransactionAvg > 0 && (
+                      <Tooltip formatter={(val: number) => [formatPrice(val), '호가']} />
+                      {actualAvgPrice > 0 && (
                         <ReferenceLine
-                          y={actualTransactionAvg}
+                          y={actualAvgPrice}
                           stroke="#2563eb"
                           strokeDasharray="5 5"
                           label={{ value: '실거래 평균', position: 'right', fontSize: 11, fill: '#2563eb' }}
@@ -138,15 +149,9 @@ export default function ListingDetailPage() {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Price history table */}
                 <table className={styles.historyTable}>
                   <thead>
-                    <tr>
-                      <th>날짜</th>
-                      <th>가격</th>
-                      <th>변동</th>
-                      <th>비고</th>
-                    </tr>
+                    <tr><th>날짜</th><th>가격</th><th>변동</th><th>비고</th></tr>
                   </thead>
                   <tbody>
                     {[...listing.priceHistory].reverse().map((h, i, arr) => {
@@ -166,7 +171,6 @@ export default function ListingDetailPage() {
                   </tbody>
                 </table>
 
-                {/* Summary stats */}
                 <div className={styles.historyStats}>
                   <div className={styles.historyStat}>
                     <span className={styles.statLabel}>최초 등록가</span>
@@ -181,7 +185,7 @@ export default function ListingDetailPage() {
                     <span className={`${styles.statVal} ${styles.down}`}>{listing.priceDropCount}회</span>
                   </div>
                   <div className={styles.historyStat}>
-                    <span className={styles.statLabel}>가격 유지 기간</span>
+                    <span className={styles.statLabel}>마지막 변동</span>
                     <span className={styles.statVal}>{formatDate(listing.updatedAt)}</span>
                   </div>
                 </div>
@@ -197,7 +201,9 @@ export default function ListingDetailPage() {
                   </div>
                   <div className={styles.compStat}>
                     <span className={styles.statLabel}>최저가</span>
-                    <span className={styles.statVal}>{formatPrice(Math.min(...[listing, ...sameComplexListings].map(l => l.price)))}</span>
+                    <span className={styles.statVal}>
+                      {formatPrice(Math.min(...[listing, ...sameComplexListings].map(l => l.price)))}
+                    </span>
                   </div>
                   <div className={styles.compStat}>
                     <span className={styles.statLabel}>현재 매물</span>
@@ -217,13 +223,7 @@ export default function ListingDetailPage() {
                 {sameComplexListings.length > 0 ? (
                   <table className={styles.compTable}>
                     <thead>
-                      <tr>
-                        <th>층</th>
-                        <th>방향</th>
-                        <th>가격</th>
-                        <th>변동</th>
-                        <th>판단</th>
-                      </tr>
+                      <tr><th>층</th><th>방향</th><th>가격</th><th>변동</th><th>판단</th></tr>
                     </thead>
                     <tbody>
                       <tr className={styles.currentRow}>
@@ -233,13 +233,11 @@ export default function ListingDetailPage() {
                         <td className={listing.priceChangeDirection === 'up' ? styles.up : listing.priceChangeDirection === 'down' ? styles.down : ''}>
                           {listing.priceChange ? formatPriceChange(listing.priceChange) : '−'}
                         </td>
-                        <td>{listing.deviationLabel}</td>
+                        <td>{deviationLabel}</td>
                       </tr>
                       {sameComplexListings.map(l => (
                         <tr key={l.id}>
-                          <td>
-                            <Link to={`/listings/${l.id}`} className={styles.tableLink}>{l.floor}층</Link>
-                          </td>
+                          <td><Link to={`/listings/${l.id}`} className={styles.tableLink}>{l.floor}층</Link></td>
                           <td>{l.direction}</td>
                           <td className={styles.priceCell}>{formatPrice(l.price)}</td>
                           <td className={l.priceChangeDirection === 'up' ? styles.up : l.priceChangeDirection === 'down' ? styles.down : ''}>
@@ -258,79 +256,112 @@ export default function ListingDetailPage() {
 
             {activeTab === 'transaction' && (
               <div className={styles.transactionTab}>
-                {transactionChart.length > 0 ? (
-                  <>
-                    <div className={styles.chartArea}>
-                      <h3 className={styles.chartTitle}>최근 실거래가 ({listing.area}㎡ 기준)</h3>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <LineChart data={transactionChart} margin={{ top: 16, right: 24, bottom: 8, left: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                          <YAxis
-                            tick={{ fontSize: 12 }}
-                            tickFormatter={v => `${(v / 10000).toFixed(0)}억`}
-                            domain={['auto', 'auto']}
-                          />
-                          <Tooltip
-                            formatter={(val: number) => [formatPrice(val), '실거래가']}
-                            labelFormatter={label => `날짜: ${label}`}
-                          />
-                          <ReferenceLine
-                            y={listing.price}
-                            stroke="#ef4444"
-                            strokeDasharray="5 5"
-                            label={{ value: '현재 호가', position: 'right', fontSize: 11, fill: '#ef4444' }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="price"
-                            stroke="#2563eb"
-                            strokeWidth={2.5}
-                            dot={{ r: 5, fill: '#2563eb' }}
-                            activeDot={{ r: 7 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className={styles.deviationBox} style={{ borderColor: deviationColor + '40', background: deviationColor + '08' }}>
-                      <div className={styles.devItem}>
-                        <span>최근 실거래 평균</span>
-                        <strong>{formatPrice(Math.round(actualTransactionAvg))}</strong>
-                      </div>
-                      <div className={styles.devItem}>
-                        <span>현재 호가</span>
-                        <strong>{formatPrice(listing.price)}</strong>
-                      </div>
-                      <div className={styles.devItem}>
-                        <span>괴리율</span>
-                        <strong style={{ color: deviationColor }}>
-                          {formatDeviation(listing.deviationFromActual ?? 0)}
-                        </strong>
-                      </div>
-                      <div className={styles.devItem}>
-                        <span>판단</span>
-                        <strong style={{ color: deviationColor }}>{listing.deviationLabel}</strong>
-                      </div>
-                    </div>
-
-                    <table className={styles.compTable}>
-                      <thead>
-                        <tr><th>거래일</th><th>층</th><th>실거래가</th></tr>
-                      </thead>
-                      <tbody>
-                        {complex?.recentTransactions.filter(t => Math.abs(t.area - listing.area) < 10).map((t, i) => (
-                          <tr key={i}>
-                            <td>{formatDate(t.date)}</td>
-                            <td>{t.floor}층</td>
-                            <td className={styles.priceCell}>{formatPrice(t.price)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
+                {txLoading ? (
+                  <div className={styles.loadingArea}>
+                    <Skeleton height={280} borderRadius="8px" />
+                    <Skeleton height={20} width="60%" />
+                    <Skeleton height={20} width="40%" />
+                  </div>
                 ) : (
-                  <p className={styles.emptyMsg}>해당 평형의 실거래 데이터가 없습니다.</p>
+                  <>
+                    {/* 실거래가 차트 */}
+                    <div className={styles.chartArea}>
+                      <div className={styles.chartTitleRow}>
+                        <h3 className={styles.chartTitle}>
+                          실거래가 ({listing.area}㎡ 기준, 최근 3개월)
+                        </h3>
+                        {realTransactions && (
+                          <span className={styles.dataSource}>
+                            공공데이터포털 국토교통부 실거래가 · {realTransactions.length}건
+                          </span>
+                        )}
+                      </div>
+
+                      {realTxChart.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={280}>
+                          <ComposedChart data={realTxChart} margin={{ top: 16, right: 32, bottom: 8, left: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                            <YAxis
+                              tick={{ fontSize: 12 }}
+                              tickFormatter={v => `${(v / 10000).toFixed(0)}억`}
+                              domain={['auto', 'auto']}
+                            />
+                            <Tooltip
+                              formatter={(val: number) => [formatPrice(val), '실거래가']}
+                              labelFormatter={label => `날짜: ${label}`}
+                            />
+                            <ReferenceLine
+                              y={listing.price}
+                              stroke="#ef4444"
+                              strokeDasharray="5 5"
+                              label={{ value: '현재 호가', position: 'insideTopRight', fontSize: 11, fill: '#ef4444' }}
+                            />
+                            {actualAvgPrice > 0 && (
+                              <ReferenceLine
+                                y={actualAvgPrice}
+                                stroke="#6b7280"
+                                strokeDasharray="3 3"
+                                label={{ value: '실거래 평균', position: 'insideBottomRight', fontSize: 11, fill: '#6b7280' }}
+                              />
+                            )}
+                            <Scatter dataKey="price" fill="#2563eb" />
+                            <Line type="monotone" dataKey="price" stroke="#2563eb" strokeWidth={2} dot={{ r: 5 }} />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className={styles.noDataChart}>
+                          <p>최근 3개월 해당 평형 실거래 데이터가 없습니다.</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 괴리율 요약 */}
+                    {devLoading ? (
+                      <Skeleton height={80} borderRadius="8px" />
+                    ) : (
+                      <div
+                        className={styles.deviationBox}
+                        style={{ borderColor: deviationColor + '40', background: deviationColor + '08' }}
+                      >
+                        <div className={styles.devItem}>
+                          <span>실거래 평균</span>
+                          <strong>{actualAvgPrice > 0 ? formatPrice(actualAvgPrice) : '−'}</strong>
+                        </div>
+                        <div className={styles.devItem}>
+                          <span>현재 호가</span>
+                          <strong>{formatPrice(listing.price)}</strong>
+                        </div>
+                        <div className={styles.devItem}>
+                          <span>괴리율</span>
+                          <strong style={{ color: deviationColor }}>{formatDeviation(deviationPct)}</strong>
+                        </div>
+                        <div className={styles.devItem}>
+                          <span>판단</span>
+                          <strong style={{ color: deviationColor }}>{deviationLabel}</strong>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 실거래 목록 */}
+                    {realTransactions && realTransactions.length > 0 && (
+                      <table className={styles.compTable}>
+                        <thead>
+                          <tr><th>거래일</th><th>층</th><th>면적</th><th>실거래가</th></tr>
+                        </thead>
+                        <tbody>
+                          {realTransactions.slice(0, 20).map(t => (
+                            <tr key={t.id}>
+                              <td>{formatDate(t.dealDate)}</td>
+                              <td>{t.floor}층</td>
+                              <td>{t.area}㎡</td>
+                              <td className={styles.priceCell}>{formatPrice(t.price)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -350,7 +381,6 @@ export default function ListingDetailPage() {
                     </div>
                   ))}
                 </div>
-
                 <div className={styles.warningFlags}>
                   {listing.isSuspectedDuplicate && (
                     <div className={styles.flag}>
@@ -392,15 +422,20 @@ export default function ListingDetailPage() {
               )}
             </div>
 
-            <div
-              className={styles.deviationBar}
-              style={{ borderColor: deviationColor + '40', background: deviationColor + '0a' }}
-            >
-              <span style={{ color: deviationColor, fontWeight: 700 }}>
-                실거래 대비 {formatDeviation(listing.deviationFromActual ?? 0)}
-              </span>
-              <span className={styles.deviationLabel}>{listing.deviationLabel}</span>
-            </div>
+            {/* 괴리율 (실데이터 기반) */}
+            {devLoading ? (
+              <Skeleton height={48} borderRadius="8px" />
+            ) : (
+              <div
+                className={styles.deviationBar}
+                style={{ borderColor: deviationColor + '40', background: deviationColor + '0a' }}
+              >
+                <span style={{ color: deviationColor, fontWeight: 700 }}>
+                  실거래 대비 {formatDeviation(deviationPct)}
+                </span>
+                <span className={styles.deviationLabel}>{deviationLabel}</span>
+              </div>
+            )}
 
             <div className={styles.detailGrid}>
               <div className={styles.detailItem}>
@@ -441,7 +476,6 @@ export default function ListingDetailPage() {
               <p className={styles.agentTitle}>담당 중개사</p>
               <p className={styles.agentName}>{listing.agent.name}</p>
               <p className={styles.agentAgency}>{listing.agent.agency}</p>
-              <p className={styles.agentLicense}>등록번호: {listing.agent.license}</p>
             </div>
 
             <div className={styles.actions}>
@@ -457,10 +491,7 @@ export default function ListingDetailPage() {
               >
                 {isFavorited ? '즐겨찾기 해제' : '즐겨찾기 추가'}
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => navigate('/alerts')}
+              <Button variant="outline" size="lg" onClick={() => navigate('/alerts')}
                 leftIcon={
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
