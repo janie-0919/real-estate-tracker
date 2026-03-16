@@ -234,6 +234,25 @@
   }
 }
 
+.showMoreBtn {
+  display: block;
+  width: 100%;
+  padding: $spacing-3 $spacing-4;
+  background: $color-gray-50;
+  border: none;
+  border-top: 1px solid $color-border;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: $color-gray-100;
+    color: $color-primary-600;
+  }
+}
+
 .districtLink {
   color: $color-primary-600;
   font-weight: $font-weight-medium;

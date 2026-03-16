@@ -17,8 +17,11 @@ const STAT_CARDS = [
   { label: '실거래 근접 매물', value: '87건', change: 3, changeLabel: '어제 대비' },
 ];
 
+const REGION_DEFAULT_COUNT = 5;
+
 export default function HomePage() {
   const [searchValue, setSearchValue] = useState('');
+  const [showAllRegions, setShowAllRegions] = useState(false);
   const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -102,7 +105,7 @@ export default function HomePage() {
               </tr>
             </thead>
             <tbody>
-              {mockRegionSummaries.map(r => (
+              {(showAllRegions ? mockRegionSummaries : mockRegionSummaries.slice(0, REGION_DEFAULT_COUNT)).map(r => (
                 <tr key={r.district}>
                   <td>
                     <Link to={`/listings?district=${encodeURIComponent(r.district)}`} className={styles.districtLink}>
@@ -119,6 +122,16 @@ export default function HomePage() {
               ))}
             </tbody>
           </table>
+          {mockRegionSummaries.length > REGION_DEFAULT_COUNT && (
+            <button
+              className={styles.showMoreBtn}
+              onClick={() => setShowAllRegions(prev => !prev)}
+            >
+              {showAllRegions
+                ? `▲ 접기`
+                : `▼ 더보기 (+${mockRegionSummaries.length - REGION_DEFAULT_COUNT}개 지역)`}
+            </button>
+          )}
         </div>
       </section>
 
