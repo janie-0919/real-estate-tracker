@@ -80,6 +80,74 @@
   font-weight: $font-weight-regular;
 }
 
+.sectionLabelRow {
+  @include flex(row, space-between, center);
+  padding: 0 $spacing-3;
+  margin-bottom: $spacing-2;
+
+  .sectionLabel {
+    padding: 0;
+    margin-bottom: 0;
+  }
+}
+
+.editBtn {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  background: none;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  padding: 2px $spacing-2;
+  cursor: pointer;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-primary-600;
+    border-color: $color-primary-300;
+  }
+
+  &.editBtnActive {
+    color: $color-primary-700;
+    background: $color-primary-50;
+    border-color: $color-primary-300;
+  }
+}
+
+.districtToggleItem {
+  @include flex(row, flex-start, center, $spacing-3);
+  width: 100%;
+  padding: $spacing-2 $spacing-3;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $color-text-secondary;
+  transition: background $transition-fast, color $transition-fast;
+  text-align: left;
+
+  &:hover {
+    background: $color-gray-100;
+    color: $color-text-primary;
+  }
+
+  &.districtToggleActive {
+    color: $color-primary-700;
+
+    .icon {
+      color: $color-primary-500;
+    }
+  }
+}
+
+.emptyHint {
+  padding: $spacing-2 $spacing-3;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  font-style: italic;
+}
+
 .footer {
   padding: $spacing-4 $spacing-4;
   border-top: 1px solid $color-border;
