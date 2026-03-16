@@ -16,6 +16,7 @@ import {
   isUsingDefaultKey,
 } from '../services/reb.js';
 import { cache, TTL } from '../services/cache.js';
+import axios from 'axios';
 
 const router = Router();
 
@@ -163,6 +164,54 @@ router.get('/monthly', async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       error: '월간 가격지수 조회 실패.',
+    });
+  }
+});
+
+// ── 진단 엔드포인트 ──────────────────────────────────────────────
+
+/**
+ * GET /api/price-index/debug
+ * R-ONE API 원본 응답을 그대로 반환 (응답 구조 확인용)
+ *
+ * Query:
+ *   endpoint - 'tables' | 'data' (기본: tables)
+ *   statblId - SttsApiTblData 호출 시 필요
+ */
+router.get('/debug', async (req: Request, res: Response) => {
+  try {
+    const { endpoint = 'tables', statblId } = req.query as Record<string, string>;
+    const API_KEY = process.env.REB_API_KEY ?? 'sample';
+    const BASE = 'https://www.reb.or.kr/r-one/openapi';
+
+    let url: string;
+    let params: Record<string, string | number>;
+
+    if (endpoint === 'data' && statblId) {
+      url = `${BASE}/SttsApiTblData.do`;
+      params = { KEY: API_KEY, Type: 'json', STATBL_ID: statblId, DTACYCLE_CD: 'MM', pIndex: 1, pSize: 5 };
+    } else {
+      url = `${BASE}/SttsApiTbl.do`;
+      params = { KEY: API_KEY, Type: 'json', pIndex: 1, pSize: 10 };
+    }
+
+    const raw = await axios.get(url, { params, timeout: 15_000 });
+
+    return res.json({
+      success: true,
+      requestUrl: url,
+      requestParams: { ...params, KEY: API_KEY.slice(0, 8) + '...' },
+      usingDefaultKey: API_KEY === 'sample',
+      responseStatus: raw.status,
+      rawResponse: raw.data,
+    });
+  } catch (err: unknown) {
+    const error = err as { message?: string; response?: { status: number; data: unknown } };
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      responseStatus: error.response?.status,
+      responseData: error.response?.data,
     });
   }
 });
