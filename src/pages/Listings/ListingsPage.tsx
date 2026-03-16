@@ -9,6 +9,9 @@ import {
 import { mockListings } from '@/data/mockListings';
 import type { FilterState, SortState, Listing, ViewMode } from '@/types';
 import { formatPrice, formatDate, formatDealType, formatDeviation, formatPriceChange } from '@/utils/format';
+import { useTransactions } from '@/hooks/useTransactions';
+import type { RealTransaction } from '@/services/api';
+import { SEOUL_DISTRICT_CODE_MAP } from '@/data/districts';
 import ListingCard from '@/components/listings/ListingCard';
 import ListingFilter from '@/components/listings/ListingFilter';
 import EmptyState from '@/components/ui/EmptyState';
@@ -73,6 +76,13 @@ function applySort(listings: Listing[], sort: SortState): Listing[] {
   });
 }
 
+function formatTransactionPrice(t: RealTransaction): string {
+  if (t.dealType === 'monthly' && t.monthlyRent) {
+    return `${formatPrice(t.price)} / 월 ${t.monthlyRent.toLocaleString()}만`;
+  }
+  return formatPrice(t.price);
+}
+
 export default function ListingsPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') ?? '';
@@ -88,6 +98,29 @@ export default function ListingsPage() {
   const [visibleCount, setVisibleCount] = useState(12);
   const [isLoading] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  // URL의 district 파라미터가 바뀔 때 필터 동기화
+  useEffect(() => {
+    setFilter(prev => ({
+      ...prev,
+      districts: districtParam ? [districtParam] : [],
+    }));
+    setVisibleCount(12);
+  }, [districtParam]);
+
+  // 지역 선택 시 한국부동산원 실거래 데이터 조회
+  const selectedDistrict = filter.districts.length === 1 ? filter.districts[0] : undefined;
+  const districtCode = selectedDistrict ? SEOUL_DISTRICT_CODE_MAP[selectedDistrict] : undefined;
+  const {
+    data: transactions,
+    isLoading: txLoading,
+    isError: txError,
+  } = useTransactions({
+    district: selectedDistrict,
+    districtCode,
+    dealType: (filter.dealType === 'monthly' ? 'all' : filter.dealType) as 'sale' | 'lease' | 'all',
+    enabled: !!selectedDistrict,
+  });
 
   const filtered = useMemo(() => applyFilters(mockListings, filter, query), [filter, query]);
   const sorted = useMemo(() => applySort(filtered, sort), [filtered, sort]);
@@ -183,7 +216,9 @@ export default function ListingsPage() {
     <div className={styles.page}>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.title}>매물 목록</h1>
+          <h1 className={styles.title}>
+            {selectedDistrict ? selectedDistrict : '매물 목록'}
+          </h1>
           {query && (
             <p className={styles.searchQuery}>
               "<strong>{query}</strong>" 검색 결과
@@ -307,6 +342,75 @@ export default function ListingsPage() {
 
       {visibleCount >= sorted.length && sorted.length > 0 && (
         <p className={styles.endMessage}>모든 매물을 불러왔습니다 ({sorted.length}개)</p>
+      )}
+
+      {/* 한국부동산원 실거래 데이터 섹션 */}
+      {selectedDistrict && (
+        <section className={styles.txSection}>
+          <div className={styles.txSectionHeader}>
+            <h2 className={styles.txSectionTitle}>
+              {selectedDistrict} 최근 실거래 내역
+              <span className={styles.txBadge}>한국부동산원</span>
+            </h2>
+            {transactions && (
+              <span className={styles.txCount}>총 {transactions.length}건</span>
+            )}
+          </div>
+
+          {txLoading && (
+            <div className={styles.txLoading}>
+              <span className={styles.loaderText}>실거래 데이터 불러오는 중...</span>
+            </div>
+          )}
+
+          {txError && (
+            <div className={styles.txError}>
+              실거래 데이터를 불러올 수 없습니다. REB_API_KEY 설정을 확인하세요.
+            </div>
+          )}
+
+          {!txLoading && !txError && transactions && transactions.length === 0 && (
+            <p className={styles.txEmpty}>최근 3개월 실거래 내역이 없습니다.</p>
+          )}
+
+          {!txLoading && transactions && transactions.length > 0 && (
+            <div className={styles.txTable}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>단지명</th>
+                    <th>법정동</th>
+                    <th>거래유형</th>
+                    <th>가격</th>
+                    <th>면적(㎡)</th>
+                    <th>층</th>
+                    <th>거래일</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map(t => (
+                    <tr key={t.id}>
+                      <td className={styles.txComplexName}>{t.complexName}</td>
+                      <td>{t.neighborhood}</td>
+                      <td>
+                        <Badge
+                          variant={t.dealType === 'sale' ? 'primary' : t.dealType === 'lease' ? 'success' : 'warning'}
+                          size="sm"
+                        >
+                          {formatDealType(t.dealType)}
+                        </Badge>
+                      </td>
+                      <td className={styles.txPrice}>{formatTransactionPrice(t)}</td>
+                      <td>{t.area.toFixed(1)}</td>
+                      <td>{t.floor}층</td>
+                      <td>{formatDate(t.dealDate)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       )}
     </div>
   );

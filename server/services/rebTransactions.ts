@@ -1,21 +1,26 @@
 /**
- * 국토교통부 실거래가 공공데이터 서비스
- * - 개발계정: RTMSDataSvcAptTradeDev  (일일 1,000건 제한)
- * - 운영계정: RTMSDataSvcAptTrade     (제한 없음)
+ * 한국부동산원(REB) 아파트 실거래 데이터 서비스
  *
- * API 문서: https://www.data.go.kr/data/15058747/openapi.do
+ * 데이터 출처: 한국부동산원 (data.go.kr, 기관코드 B552554)
+ *   - 아파트매매 실거래 신고 자료
+ *   - 아파트 전월세 신고 자료
+ *
+ * API 키 발급:
+ *   https://www.data.go.kr 에서 아래 서비스 신청 후 인증키 발급
+ *   - B552554 / 아파트매매 실거래 신고 자료
+ *   - B552554 / 아파트 전월세 신고 자료
+ *   발급받은 인증키를 .env의 REB_API_KEY 에 설정
+ *
+ * 엔드포인트:
+ *   매매: https://apis.data.go.kr/B552554/RealEstateSaleSvc/getRealEstateSaleInfo
+ *   전월세: https://apis.data.go.kr/B552554/RealEstateRentSvc/getRealEstateRentInfo
  */
 import axios from 'axios';
 import xml2js from 'xml2js';
-import type { MolitSaleRaw, MolitLeaseRaw, Transaction } from '../types.js';
+import type { Transaction } from '../types.js';
 
-const BASE_URL = 'https://apis.data.go.kr/1613000';
-const SERVICE_KEY = process.env.MOLIT_API_KEY ?? '';
-
-// 개발계정은 Dev 엔드포인트 사용 (운영계정은 false로 변경)
-const IS_DEV = process.env.MOLIT_ENV !== 'production';
-const SALE_ENDPOINT  = IS_DEV ? 'RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev'  : 'RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade';
-const LEASE_ENDPOINT = IS_DEV ? 'RTMSDataSvcAptRentDev/getRTMSDataSvcAptRentDev'    : 'RTMSDataSvcAptRent/getRTMSDataSvcAptRent';
+const BASE_URL = 'https://apis.data.go.kr/B552554';
+const SERVICE_KEY = process.env.REB_API_KEY ?? '';
 
 const parser = new xml2js.Parser({ explicitArray: false, trim: true });
 
@@ -42,17 +47,29 @@ function buildDealDate(year: string, month: string, day: string): string {
   return `${year.trim()}-${m}-${d}`;
 }
 
-function generateId(item: MolitSaleRaw | MolitLeaseRaw, type: string): string {
-  return `${type}-${item.지역코드}-${item.아파트}-${item.년}${item.월}-${item.층}-${item.전용면적}`;
+// ── 아파트 매매 실거래가 ──────────────────────────────────────────
+
+interface RebSaleItem {
+  거래금액: string;
+  건축년도: string;
+  년: string;
+  월: string;
+  일: string;
+  법정동: string;
+  아파트명?: string;   // REB 필드명
+  아파트?: string;    // MOLIT 호환 필드명
+  전용면적: string;
+  지역코드: string;
+  층: string;
+  해제여부?: string;
 }
 
-// ── 아파트 매매 실거래가 ──────────────────────────────────────────
 export async function fetchSaleTransactions(
   districtCode: string,
-  yearMonth: string, // "202401"
+  yearMonth: string,
 ): Promise<Transaction[]> {
   const res = await axios.get(
-    `${BASE_URL}/${SALE_ENDPOINT}`,
+    `${BASE_URL}/RealEstateSaleSvc/getRealEstateSaleInfo`,
     {
       params: {
         serviceKey: SERVICE_KEY,
@@ -67,21 +84,21 @@ export async function fetchSaleTransactions(
   );
 
   const parsed = await parseXml<{
-    response: { body: { items: { item: MolitSaleRaw | MolitSaleRaw[] } } };
+    response: { body: { items: { item: RebSaleItem | RebSaleItem[] } } };
   }>(res.data);
 
   const body = parsed.response?.body;
   if (!body?.items?.item) return [];
 
-  const items: MolitSaleRaw[] = Array.isArray(body.items.item)
+  const items: RebSaleItem[] = Array.isArray(body.items.item)
     ? body.items.item
     : [body.items.item];
 
   return items
-    .filter(item => !item.해제여부) // 해제된 거래 제외
+    .filter(item => !item.해제여부)
     .map(item => ({
-      id: generateId(item, 'sale'),
-      complexName: item.아파트.trim(),
+      id: `reb-sale-${item.지역코드}-${item.아파트명 ?? item.아파트}-${item.년}${item.월}-${item.층}-${item.전용면적}`,
+      complexName: (item.아파트명 ?? item.아파트 ?? '').trim(),
       district: `서울 ${getDistrictName(districtCode)}`,
       neighborhood: item.법정동.trim(),
       districtCode,
@@ -96,12 +113,28 @@ export async function fetchSaleTransactions(
 }
 
 // ── 아파트 전월세 실거래가 ───────────────────────────────────────
+
+interface RebRentItem {
+  건축년도: string;
+  년: string;
+  월: string;
+  일: string;
+  법정동: string;
+  아파트명?: string;
+  아파트?: string;
+  전용면적: string;
+  지역코드: string;
+  층: string;
+  보증금액?: string;
+  월세금액?: string;
+}
+
 export async function fetchLeaseTransactions(
   districtCode: string,
   yearMonth: string,
 ): Promise<Transaction[]> {
   const res = await axios.get(
-    `${BASE_URL}/${LEASE_ENDPOINT}`,
+    `${BASE_URL}/RealEstateRentSvc/getRealEstateRentInfo`,
     {
       params: {
         serviceKey: SERVICE_KEY,
@@ -116,21 +149,21 @@ export async function fetchLeaseTransactions(
   );
 
   const parsed = await parseXml<{
-    response: { body: { items: { item: MolitLeaseRaw | MolitLeaseRaw[] } } };
+    response: { body: { items: { item: RebRentItem | RebRentItem[] } } };
   }>(res.data);
 
   const body = parsed.response?.body;
   if (!body?.items?.item) return [];
 
-  const items: MolitLeaseRaw[] = Array.isArray(body.items.item)
+  const items: RebRentItem[] = Array.isArray(body.items.item)
     ? body.items.item
     : [body.items.item];
 
   return items.map(item => {
     const hasMonthlyRent = !!item.월세금액 && item.월세금액.trim() !== '0';
     return {
-      id: generateId(item, 'lease'),
-      complexName: item.아파트.trim(),
+      id: `reb-rent-${item.지역코드}-${item.아파트명 ?? item.아파트}-${item.년}${item.월}-${item.층}-${item.전용면적}`,
+      complexName: (item.아파트명 ?? item.아파트 ?? '').trim(),
       district: `서울 ${getDistrictName(districtCode)}`,
       neighborhood: item.법정동.trim(),
       districtCode,
@@ -147,9 +180,10 @@ export async function fetchLeaseTransactions(
 }
 
 // ── 여러 달 범위 조회 ────────────────────────────────────────────
+
 export async function fetchTransactionRange(
   districtCode: string,
-  months: string[], // ["202401", "202312", ...]
+  months: string[],
   dealType: 'sale' | 'lease' | 'all' = 'all',
 ): Promise<Transaction[]> {
   const fetchers = months.flatMap(ym => {
@@ -170,6 +204,7 @@ export async function fetchTransactionRange(
 }
 
 // ── 단지별 집계 ──────────────────────────────────────────────────
+
 export function aggregateByComplex(
   transactions: Transaction[],
 ): Map<string, {
@@ -216,6 +251,7 @@ export function aggregateByComplex(
 }
 
 // ── 최근 N개월 yearMonth 배열 생성 ──────────────────────────────
+
 export function getRecentMonths(n: number): string[] {
   const months: string[] = [];
   const now = new Date();

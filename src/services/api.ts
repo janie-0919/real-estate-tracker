@@ -185,7 +185,7 @@ export const api = {
     fromPeriod?: string;
     pageSize?: number;
   }) {
-    return request<RebDataRow[]>('/price-index', params as Record<string, string>);
+    return request<RebDataRow[]>('/price-index', params as unknown as Record<string, string>);
   },
 
   /**

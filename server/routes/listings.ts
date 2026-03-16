@@ -5,7 +5,7 @@
  * 실제 매물 데이터는 직방 등 외부 소스 또는 자체 수집 파이프라인과 연결.
  */
 import { Router, type Request, type Response } from 'express';
-import { fetchSaleTransactions, getRecentMonths } from '../services/molit.js';
+import { fetchSaleTransactions, getRecentMonths } from '../services/rebTransactions.js';
 import { calcDeviation } from '../services/listings.js';
 import { DISTRICT_CODES } from '../types.js';
 import { cache, TTL } from '../services/cache.js';
