@@ -111,6 +111,26 @@ export interface PriceIndexPoint {
   value: number;    // 지수값
 }
 
+/** R-ONE 시세 월별 데이터 포인트 */
+export interface RebMarketPoint {
+  period: string;
+  value: number;
+}
+
+/** R-ONE 지역별 시세 통계 */
+export interface RebMarketStat {
+  statblId: string;
+  statblNm: string;    // 통계표명 (예: "아파트 매매가격지수")
+  region: string;      // 지역명 (예: "강남구")
+  unit: string;        // 단위 (예: "2021=100", "만원/㎡")
+  dataPoints: RebMarketPoint[];
+  latestPeriod: string;
+  latestValue: number;
+  prevPeriod: string | null;
+  prevValue: number | null;
+  changeRate: number | null;  // 전월 대비 변동률(%)
+}
+
 // ── API 함수 ──────────────────────────────────────────────────────
 
 /** 아파트 실거래가 목록 */
@@ -209,5 +229,32 @@ export const api = {
     regions?: string;
   }) {
     return request<PriceIndexPoint[]>('/price-index/monthly', params as Record<string, string>);
+  },
+
+  // ── R-ONE 시세 현황 API ────────────────────────────────────────
+
+  /**
+   * 지역별 아파트 가격 시계열 (R-ONE 통계 기반)
+   *
+   * @param region   지역명 (예: '강남구', '서울')
+   * @param dealType 거래유형 (기본 'all')
+   * @param months   조회 개월 수 (기본 6)
+   */
+  getRebMarket(params: {
+    region: string;
+    dealType?: 'sale' | 'lease' | 'all';
+    months?: number;
+  }) {
+    return request<RebMarketStat[]>('/reb/market', params as unknown as Record<string, string>);
+  },
+
+  /**
+   * 서울 전 구 최신 가격 지수 개요
+   */
+  getRebMarketOverview(params?: { months?: number }) {
+    return request<{ district: string; stats: RebMarketStat[] }[]>(
+      '/reb/market/overview',
+      params as unknown as Record<string, string>,
+    );
   },
 };

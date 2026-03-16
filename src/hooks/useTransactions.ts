@@ -2,6 +2,24 @@ import { useQuery } from '@tanstack/react-query';
 import { api, type RealTransaction } from '@/services/api';
 import { formatPrice } from '@/utils/format';
 
+// ── R-ONE 시세 현황 훅 ────────────────────────────────────────────
+
+export function useRebMarket(params: {
+  region?: string;
+  dealType?: 'sale' | 'lease' | 'all';
+  months?: number;
+  enabled?: boolean;
+}) {
+  const { enabled = true, region, ...rest } = params;
+  return useQuery({
+    queryKey: ['reb-market', { region, ...rest }],
+    queryFn: () => api.getRebMarket({ region: region!, ...rest }),
+    enabled: enabled && !!region,
+    staleTime: 1000 * 60 * 60,  // 1시간 캐시
+    retry: 1,
+  });
+}
+
 // ── Query keys ────────────────────────────────────────────────────
 export const txKeys = {
   all: ['transactions'] as const,

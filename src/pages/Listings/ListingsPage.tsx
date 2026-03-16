@@ -9,9 +9,10 @@ import {
 import { mockListings } from '@/data/mockListings';
 import type { FilterState, SortState, Listing, ViewMode } from '@/types';
 import { formatPrice, formatDate, formatDealType, formatDeviation, formatPriceChange } from '@/utils/format';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactions, useRebMarket } from '@/hooks/useTransactions';
 import type { RealTransaction } from '@/services/api';
 import { SEOUL_DISTRICT_CODE_MAP } from '@/data/districts';
+import RebMarketSection from '@/components/listings/RebMarketSection';
 import ListingCard from '@/components/listings/ListingCard';
 import ListingFilter from '@/components/listings/ListingFilter';
 import EmptyState from '@/components/ui/EmptyState';
@@ -111,6 +112,8 @@ export default function ListingsPage() {
   // 지역 선택 시 한국부동산원 실거래 데이터 조회
   const selectedDistrict = filter.districts.length === 1 ? filter.districts[0] : undefined;
   const districtCode = selectedDistrict ? SEOUL_DISTRICT_CODE_MAP[selectedDistrict] : undefined;
+  const guName = selectedDistrict?.replace('서울 ', '');
+
   const {
     data: transactions,
     isLoading: txLoading,
@@ -120,6 +123,17 @@ export default function ListingsPage() {
     districtCode,
     dealType: (filter.dealType === 'monthly' ? 'all' : filter.dealType) as 'sale' | 'lease' | 'all',
     enabled: !!selectedDistrict,
+  });
+
+  // R-ONE 가격 시세 조회
+  const {
+    data: rebStats,
+    isLoading: rebLoading,
+    isError: rebError,
+  } = useRebMarket({
+    region: guName,
+    months: 6,
+    enabled: !!guName,
   });
 
   const filtered = useMemo(() => applyFilters(mockListings, filter, query), [filter, query]);
@@ -342,6 +356,16 @@ export default function ListingsPage() {
 
       {visibleCount >= sorted.length && sorted.length > 0 && (
         <p className={styles.endMessage}>모든 매물을 불러왔습니다 ({sorted.length}개)</p>
+      )}
+
+      {/* R-ONE 공식 가격 시세 섹션 */}
+      {selectedDistrict && (
+        <RebMarketSection
+          district={selectedDistrict}
+          stats={rebStats ?? []}
+          isLoading={rebLoading}
+          isError={rebError}
+        />
       )}
 
       {/* 한국부동산원 실거래 데이터 섹션 */}

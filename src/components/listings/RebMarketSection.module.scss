@@ -1,0 +1,147 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.section {
+  margin-top: $spacing-8;
+  @include flex(column, flex-start, stretch, $spacing-4);
+}
+
+.header {
+  @include flex(row, space-between, center);
+  flex-wrap: wrap;
+  gap: $spacing-2;
+}
+
+.title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  @include flex(row, flex-start, center, $spacing-2);
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px $spacing-2;
+  background: linear-gradient(135deg, #dbeafe, #eff6ff);
+  color: $color-primary-700;
+  border: 1px solid $color-primary-200;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+// ── 상태 ────────────────────────────────────────────────────────
+
+.loading {
+  @include flex(row, flex-start, center, $spacing-2);
+  padding: $spacing-6;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid $color-primary-200;
+  border-top-color: $color-primary-600;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  padding: $spacing-4;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: $radius-md;
+  color: #dc2626;
+  font-size: $font-size-sm;
+}
+
+.empty {
+  padding: $spacing-4;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+// ── 카드 그리드 ─────────────────────────────────────────────────
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: $spacing-4;
+}
+
+.card {
+  @include card;
+  @include flex(column, flex-start, stretch, $spacing-1);
+  padding: $spacing-4;
+  transition: box-shadow 0.15s;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+.cardTop {
+  @include flex(row, space-between, flex-start);
+  gap: $spacing-2;
+}
+
+.cardTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.changeRate {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  white-space: nowrap;
+
+  &.up   { color: #dc2626; }
+  &.down { color: #2563eb; }
+  &.flat { color: $color-text-secondary; }
+}
+
+.valueRow {
+  @include flex(row, flex-start, baseline, $spacing-1);
+  margin-top: $spacing-1;
+}
+
+.value {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1;
+}
+
+.unit {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.period {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: $spacing-1;
+}
+
+.sparkline {
+  margin-top: $spacing-3;
+  padding-top: $spacing-2;
+  border-top: 1px solid $color-border;
+}

@@ -5,6 +5,7 @@ import cron from 'node-cron';
 import transactionRouter from './routes/transactions.js';
 import listingRouter from './routes/listings.js';
 import priceIndexRouter from './routes/priceIndex.js';
+import rebMarketRouter from './routes/rebMarket.js';
 import { cache } from './services/cache.js';
 
 const app = express();
@@ -27,6 +28,7 @@ app.use((req, _res, next) => {
 app.use('/api/transactions', transactionRouter);
 app.use('/api/listings', listingRouter);
 app.use('/api/price-index', priceIndexRouter);
+app.use('/api/reb/market', rebMarketRouter);
 
 // ── Health check ──────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
