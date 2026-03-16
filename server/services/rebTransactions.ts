@@ -9,82 +9,91 @@
  *   https://www.data.go.kr 에서 아래 서비스 신청 후 인증키 발급
  *   - 1613000 / RTMSDataSvcAptTradeDev (아파트매매 실거래 신고 자료 개발계정)
  *   - 1613000 / RTMSDataSvcAptRent (아파트 전월세 신고 자료)
- *   발급받은 인증키를 .env의 DATA_GO_KR_API_KEY 에 설정
+ *   발급받은 인증키(Decoding)를 .env의 DATA_GO_KR_API_KEY 에 설정
  *
  * 엔드포인트 (기술문서 기준):
  *   매매: https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev
  *   전월세: https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent
  *
+ * 응답 형식: JSON
+ *   { response: { header: { resultCode, resultMsg }, body: { items: { item }, numOfRows, totalCount } } }
+ *
  * 요청 파라미터:
- *   serviceKey  - 인증키 (URL Encode)
+ *   serviceKey  - 인증키(Decoding)
  *   pageNo      - 페이지 번호
- *   numOfRows   - 한 페이지 결과 수
+ *   numOfRows   - 한 페이지 결과 수 (기본 10, 최대 1000)
  *   LAWD_CD     - 법정동코드 (시군구코드 5자리, 예: 11110)
  *   DEAL_YMD    - 계약월 (YYYYMM, 예: 202407)
  */
 import axios from 'axios';
-import xml2js from 'xml2js';
 import type { Transaction } from '../types.js';
 
 const BASE_URL = 'https://apis.data.go.kr/1613000';
-// data.go.kr 실거래 API 키 — R-ONE 통계 API 키(reb.or.kr)와 별개
+// data.go.kr 실거래 API 키 (Decoding 키) — R-ONE 통계 API 키(reb.or.kr)와 별개
 const SERVICE_KEY = process.env.DATA_GO_KR_API_KEY ?? process.env.REB_API_KEY ?? '';
 
-const parser = new xml2js.Parser({ explicitArray: false, trim: true });
-
-function parseXml<T>(xml: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    parser.parseString(xml, (err: Error | null, result: unknown) => {
-      if (err) reject(err);
-      else resolve(result as T);
-    });
-  });
+function parsePrice(str: string | number): number {
+  if (typeof str === 'number') return str;
+  return parseInt(String(str).replace(/,/g, '').trim(), 10);
 }
 
-function parsePrice(str: string): number {
-  return parseInt(str.replace(/,/g, '').trim(), 10);
+function parseArea(str: string | number): number {
+  if (typeof str === 'number') return str;
+  return parseFloat(String(str).trim());
 }
 
-function parseArea(str: string): number {
-  return parseFloat(str.trim());
-}
-
-function buildDealDate(year: string, month: string, day: string): string {
-  const m = String(month ?? '1').trim().padStart(2, '0');
+function buildDealDate(year: string | number, month: string | number, day: string | number): string {
+  const y = String(year).trim();
+  const m = String(month).trim().padStart(2, '0');
   const d = String(day ?? '1').trim().padStart(2, '0');
-  return `${String(year).trim()}-${m}-${d}`;
+  return `${y}-${m}-${d}`;
 }
 
 // ── 아파트 매매 실거래가 ──────────────────────────────────────────
-// 기술문서 기준 XML 응답 필드명 (영문)
+// 기술문서 기준 JSON 응답 필드명
 
 interface AptTradeItem {
   aptNm: string;           // 아파트명
-  buildYear: string;       // 건축년도
-  dealYear: string;        // 계약년도
-  dealMonth: string;       // 계약월
-  dealDay: string;         // 계약일
+  buildYear: string | number; // 건축년도
+  dealYear: string | number;  // 계약년도
+  dealMonth: string | number; // 계약월
+  dealDay: string | number;   // 계약일
   umdNm: string;           // 읍면동명 (법정동)
   dealAmount: string;      // 거래금액 (만원, 쉼표 포함, 예: "12,000")
-  excluUseAr: string;      // 전용면적 (㎡)
-  sggCd: string;           // 시군구코드 (지역코드 5자리)
-  floor: string;           // 층
-  cdealType?: string;      // 계약해제여부 (값 있으면 해제)
+  excluUseAr: string | number; // 전용면적 (㎡)
+  sggCd: string | number;  // 시군구코드 (지역코드 5자리)
+  floor: string | number;  // 층
+  cdealType?: string;      // 계약해제여부 (공백 또는 'O')
   cdealDay?: string;       // 계약해제일
   aptSeq?: string;         // 아파트 일련번호
-  dealingGbn?: string;     // 거래유형 (중개거래 등)
+  aptDong?: string;        // 동
+  dealingGbn?: string;     // 거래유형 (중개거래/직거래)
   jibun?: string;          // 지번
   bonbun?: string;         // 본번
   bubun?: string;          // 부번
-  aptDong?: string;        // 동
   landLeaseholdGbn?: string; // 토지임대부 여부
+  buyerGbn?: string;       // 매수자구분
+  slerGbn?: string;        // 매도자구분
+  rgstDate?: string;       // 등기일자
+}
+
+interface DataGoKrResponse<T> {
+  response: {
+    header: { resultCode: string; resultMsg: string };
+    body: {
+      items: { item: T | T[] } | '' | null;
+      numOfRows: number;
+      pageNo: number;
+      totalCount: number;
+    };
+  };
 }
 
 export async function fetchSaleTransactions(
   districtCode: string,
   yearMonth: string,
 ): Promise<Transaction[]> {
-  const res = await axios.get(
+  const res = await axios.get<DataGoKrResponse<AptTradeItem>>(
     `${BASE_URL}/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev`,
     {
       params: {
@@ -94,24 +103,31 @@ export async function fetchSaleTransactions(
         numOfRows: 1000,
         pageNo: 1,
       },
-      responseType: 'text',
       timeout: 10_000,
+      validateStatus: () => true,  // HTTP 에러코드도 응답으로 처리 (throw 방지)
     },
   );
 
-  const parsed = await parseXml<{
-    response: { body: { items: { item: AptTradeItem | AptTradeItem[] } } };
-  }>(res.data);
+  if (res.status !== 200) {
+    console.warn(`[fetchSaleTransactions] HTTP ${res.status} - districtCode:${districtCode} yearMonth:${yearMonth}`);
+    return [];
+  }
 
-  const body = parsed.response?.body;
-  if (!body?.items?.item) return [];
+  const header = res.data?.response?.header;
+  if (header?.resultCode !== '000') {
+    console.warn(`[fetchSaleTransactions] API 오류: ${header?.resultCode} - ${header?.resultMsg}`);
+    return [];
+  }
 
-  const items: AptTradeItem[] = Array.isArray(body.items.item)
-    ? body.items.item
-    : [body.items.item];
+  const bodyItems = res.data?.response?.body?.items;
+  if (!bodyItems || typeof bodyItems !== 'object' || !('item' in bodyItems) || !bodyItems.item) return [];
+
+  const items: AptTradeItem[] = Array.isArray(bodyItems.item)
+    ? bodyItems.item
+    : [bodyItems.item];
 
   return items
-    .filter(item => !item.cdealType || item.cdealType.trim() === '')  // 계약해제 제외
+    .filter(item => !item.cdealType || String(item.cdealType).trim() === '')  // 계약해제 제외
     .map(item => ({
       id: `apt-trade-${item.sggCd}-${item.aptNm}-${item.dealYear}${item.dealMonth}-${item.floor}-${item.excluUseAr}`,
       complexName: (item.aptNm ?? '').trim(),
@@ -121,28 +137,28 @@ export async function fetchSaleTransactions(
       dealType: 'sale' as const,
       price: parsePrice(item.dealAmount),
       area: parseArea(item.excluUseAr),
-      floor: parseInt(item.floor, 10),
-      buildYear: parseInt(item.buildYear, 10),
+      floor: parseInt(String(item.floor), 10),
+      buildYear: parseInt(String(item.buildYear), 10),
       dealDate: buildDealDate(item.dealYear, item.dealMonth, item.dealDay),
       isCancelled: false,
     }));
 }
 
 // ── 아파트 전월세 실거래가 ───────────────────────────────────────
-// 기술문서 기준 XML 응답 필드명 (영문)
+// 기술문서 기준 JSON 응답 필드명
 
 interface AptRentItem {
   aptNm: string;           // 아파트명
-  buildYear: string;       // 건축년도
-  year: string;            // 계약년도
-  month: string;           // 계약월
-  day: string;             // 계약일
+  buildYear: string | number; // 건축년도
+  year: string | number;   // 계약년도
+  month: string | number;  // 계약월
+  day: string | number;    // 계약일
   umdNm: string;           // 읍면동명 (법정동)
   deposit: string;         // 보증금 (만원)
   monthlyRent: string;     // 월세금액 (만원)
-  excluUseAr: string;      // 전용면적 (㎡)
-  sggCd: string;           // 시군구코드 (지역코드 5자리)
-  floor: string;           // 층
+  excluUseAr: string | number; // 전용면적 (㎡)
+  sggCd: string | number;  // 시군구코드 (지역코드 5자리)
+  floor: string | number;  // 층
   aptDong?: string;        // 동
   jibun?: string;          // 지번
   preDeposit?: string;     // 종전 보증금
@@ -156,7 +172,7 @@ export async function fetchLeaseTransactions(
   districtCode: string,
   yearMonth: string,
 ): Promise<Transaction[]> {
-  const res = await axios.get(
+  const res = await axios.get<DataGoKrResponse<AptRentItem>>(
     `${BASE_URL}/RTMSDataSvcAptRent/getRTMSDataSvcAptRent`,
     {
       params: {
@@ -166,21 +182,33 @@ export async function fetchLeaseTransactions(
         numOfRows: 1000,
         pageNo: 1,
       },
-      responseType: 'text',
       timeout: 10_000,
+      validateStatus: () => true,  // HTTP 에러코드도 응답으로 처리 (throw 방지)
     },
   );
 
-  const parsed = await parseXml<{
-    response: { body: { items: { item: AptRentItem | AptRentItem[] } } };
-  }>(res.data);
+  if (res.status === 403) {
+    // 전월세 서비스 미신청 시 403 반환 → data.go.kr에서 RTMSDataSvcAptRent 활용 신청 필요
+    console.warn(`[fetchLeaseTransactions] 403 Forbidden - data.go.kr에서 '아파트 전월세 신고 자료' 서비스 활용 신청 필요`);
+    return [];
+  }
+  if (res.status !== 200) {
+    console.warn(`[fetchLeaseTransactions] HTTP ${res.status} - districtCode:${districtCode} yearMonth:${yearMonth}`);
+    return [];
+  }
 
-  const body = parsed.response?.body;
-  if (!body?.items?.item) return [];
+  const header = res.data?.response?.header;
+  if (header?.resultCode !== '000') {
+    console.warn(`[fetchLeaseTransactions] API 오류: ${header?.resultCode} - ${header?.resultMsg}`);
+    return [];
+  }
 
-  const items: AptRentItem[] = Array.isArray(body.items.item)
-    ? body.items.item
-    : [body.items.item];
+  const bodyItems = res.data?.response?.body?.items;
+  if (!bodyItems || typeof bodyItems !== 'object' || !('item' in bodyItems) || !bodyItems.item) return [];
+
+  const items: AptRentItem[] = Array.isArray(bodyItems.item)
+    ? bodyItems.item
+    : [bodyItems.item];
 
   return items.map(item => {
     const monthlyRentAmt = item.monthlyRent ? parsePrice(item.monthlyRent) : 0;
@@ -195,8 +223,8 @@ export async function fetchLeaseTransactions(
       price: parsePrice(item.deposit ?? '0'),
       monthlyRent: hasMonthlyRent ? monthlyRentAmt : undefined,
       area: parseArea(item.excluUseAr),
-      floor: parseInt(item.floor, 10),
-      buildYear: parseInt(item.buildYear, 10),
+      floor: parseInt(String(item.floor), 10),
+      buildYear: parseInt(String(item.buildYear), 10),
       dealDate: buildDealDate(item.year, item.month, item.day),
       isCancelled: false,
     };
