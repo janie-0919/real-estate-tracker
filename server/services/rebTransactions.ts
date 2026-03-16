@@ -142,7 +142,7 @@ export async function fetchSaleTransactions(
   return items
     .filter(item => !item.cdealType || String(item.cdealType).trim() === '')  // 계약해제 제외
     .map(item => ({
-      id: `apt-trade-${item.sggCd}-${item.aptNm}-${item.dealYear}${item.dealMonth}-${item.floor}-${item.excluUseAr}`,
+      id: `apt-trade-${item.sggCd}-${item.aptNm}-${item.dealYear}${String(item.dealMonth).padStart(2,'0')}${String(item.dealDay ?? '01').padStart(2,'0')}-${item.floor}-${item.excluUseAr}`,
       complexName: (item.aptNm ?? '').trim(),
       district: `서울 ${getDistrictName(districtCode)}`,
       neighborhood: (item.umdNm ?? '').trim(),
@@ -245,7 +245,7 @@ export async function fetchLeaseTransactions(
     const monthlyRentAmt = item.monthlyRent ? parsePrice(item.monthlyRent) : 0;
     const hasMonthlyRent = monthlyRentAmt > 0;
     return {
-      id: `apt-rent-${item.sggCd}-${item.aptNm}-${item.dealYear}${item.dealMonth}-${item.floor}-${item.excluUseAr}`,
+      id: `apt-rent-${item.sggCd}-${item.aptNm}-${item.dealYear}${String(item.dealMonth).padStart(2,'0')}${String(item.dealDay ?? '01').padStart(2,'0')}-${item.floor}-${item.excluUseAr}`,
       complexName: (item.aptNm ?? '').trim(),
       district: `서울 ${getDistrictName(districtCode)}`,
       neighborhood: (item.umdNm ?? '').trim(),

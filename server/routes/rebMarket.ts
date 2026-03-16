@@ -25,7 +25,9 @@ const EXCLUDE_KEYWORDS = ['분양', '재건축', '규모별', '소득'];
 function isAptTable(row: RebTableRow, keywords: string[]): boolean {
   const nm = row.STATBL_NM;
   if (EXCLUDE_KEYWORDS.some(k => nm.includes(k))) return false;
-  return keywords.every(k => nm.includes(k)) && row.STTS_CYCLE === 'MM';
+  // STTS_CYCLE 필드는 API 응답에서 항상 빈값 → 테이블명의 (월) 접두어로 판단
+  const isMonthly = nm.startsWith('(월)');
+  return keywords.every(k => nm.includes(k)) && isMonthly;
 }
 
 // 최근 N개월의 YYYYMM 배열 반환 (과거 → 현재 순)
@@ -79,7 +81,10 @@ async function fetchMarketStats(
     targetTables.push(...allTables.filter(t => isAptTable(t, APT_LEASE_KEYWORDS)));
   }
 
-  if (targetTables.length === 0) return [];
+  // dealType === 'all' 일 때 매매/전세 키워드를 모두 포함하는 테이블이 중복 추가될 수 있으므로 dedup
+  const uniqueTargetTables = [...new Map(targetTables.map(t => [t.STATBL_ID, t])).values()];
+
+  if (uniqueTargetTables.length === 0) return [];
 
   // 공식 가이드: WRTTIME_IDTFR_ID는 특정 기간 하나만 필터링
   // → 여러 달 트렌드 조회 시 달마다 별도 호출 후 합산
@@ -87,7 +92,7 @@ async function fetchMarketStats(
   const results: RebMarketStat[] = [];
 
   await Promise.allSettled(
-    targetTables.map(async table => {
+    uniqueTargetTables.map(async table => {
       const dataCacheKey = `reb:market:${table.STATBL_ID}:${monthRange[0]}-${monthRange[monthRange.length - 1]}`;
       let rows = cache.get<Awaited<ReturnType<typeof fetchPriceIndexRange>>>(dataCacheKey);
       if (!rows) {
@@ -95,23 +100,34 @@ async function fetchMarketStats(
         cache.set(dataCacheKey, rows, TTL.DISTRICT);
       }
 
-      // 요청 지역에 해당하는 rows만 필터 (ITM_NM이 region을 포함)
-      const regionRows = rows.filter(
-        r => r.ITM_NM.includes(region) && r.DTA_VAL && r.DTA_VAL.trim() !== '',
-      );
-      if (regionRows.length === 0) return;
+      // 요청 지역에 해당하는 rows만 필터
+      // 실제 지역명은 CLS_NM 필드에 있음 (ITM_NM은 항목명: 지수/가격)
+      const regionRows = rows.filter(r => {
+        const cls = r.CLS_NM ?? '';
+        const clsFull = r.CLS_FULLNM ?? '';
+        const hasRegion = cls.includes(region) || clsFull.includes(region);
+        const hasValue = r.DTA_VAL !== '' && r.DTA_VAL !== null && r.DTA_VAL !== undefined;
+        return hasRegion && hasValue;
+      });
+
+      // 구 단위 매칭 없을 때 서울 전체 데이터로 fallback
+      const effectiveRows = regionRows.length > 0
+        ? regionRows
+        : rows.filter(r => r.CLS_NM === '서울' && r.DTA_VAL !== '' && r.DTA_VAL !== null);
+
+      if (effectiveRows.length === 0) return;
 
       // 매칭된 지역명 추출 (가장 짧은 것 = 가장 정확한 매칭)
-      const matchedRegion = regionRows
-        .map(r => r.ITM_NM)
+      const matchedRegion = effectiveRows
+        .map(r => r.CLS_NM)
         .sort((a, b) => a.length - b.length)[0];
 
-      const regionSpecific = regionRows.filter(r => r.ITM_NM === matchedRegion);
+      const regionSpecific = effectiveRows.filter(r => r.CLS_NM === matchedRegion);
 
       // 기간별로 집계 (중복 제거 후 최신값 사용)
       const periodMap = new Map<string, number>();
       for (const r of regionSpecific) {
-        const val = parseFloat(r.DTA_VAL);
+        const val = typeof r.DTA_VAL === 'number' ? r.DTA_VAL : parseFloat(String(r.DTA_VAL));
         if (!isNaN(val)) periodMap.set(r.WRTTIME_IDTFR_ID, val);
       }
 
@@ -127,7 +143,7 @@ async function fetchMarketStats(
         ? parseFloat((((latest.value - prev.value) / prev.value) * 100).toFixed(2))
         : null;
 
-      const unit = regionSpecific[0].UNIT_NM ?? '';
+      const unit = regionSpecific[0].UI_NM ?? regionSpecific[0].UNIT_NM ?? '';
 
       results.push({
         statblId: table.STATBL_ID,

@@ -1,0 +1,73 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+
+  &:hover .card {
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
+}
+
+.card {
+  @include card;
+  padding: $spacing-4;
+  transition: box-shadow $transition-fast, transform $transition-fast;
+  @include flex(column, flex-start, stretch, $spacing-2);
+  height: 100%;
+}
+
+.topRow {
+  @include flex(row, space-between, center);
+  margin-bottom: $spacing-1;
+}
+
+.date {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.complexName {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+.price {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary-700;
+  margin-top: auto;
+  padding-top: $spacing-2;
+}
+
+.footer {
+  @include flex(row, space-between, center);
+  padding-top: $spacing-2;
+  border-top: 1px solid $color-border;
+  margin-top: $spacing-1;
+}
+
+.source {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.district {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}

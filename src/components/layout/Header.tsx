@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { parseSearchQuery, buildListingsUrl } from '@/utils/search';
 import styles from './Header.module.scss';
 
 export default function Header() {
@@ -8,9 +9,9 @@ export default function Header() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchValue.trim()) {
-      navigate(`/listings?q=${encodeURIComponent(searchValue.trim())}`);
-    }
+    if (!searchValue.trim()) return;
+    const { district, query } = parseSearchQuery(searchValue.trim());
+    navigate(buildListingsUrl(district, query));
   };
 
   return (

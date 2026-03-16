@@ -43,6 +43,10 @@
 .sortGroup {
   @include flex(row, flex-start, center, $spacing-1);
   flex-wrap: wrap;
+
+  @media (max-width: #{$bp-sm}) {
+    gap: $spacing-1;
+  }
 }
 
 .sortBtn {
@@ -55,6 +59,12 @@
   border-radius: $radius-full;
   background: $color-bg-surface;
   transition: all $transition-fast;
+  white-space: nowrap;
+
+  @media (max-width: #{$bp-sm}) {
+    padding: $spacing-1 $spacing-2;
+    font-size: $font-size-xs;
+  }
 
   &:hover {
     border-color: $color-primary-300;
@@ -75,6 +85,11 @@
   border: 1px solid $color-border;
   border-radius: $radius-md;
   overflow: hidden;
+
+  // 모바일에서는 뷰 전환 버튼 숨김 (항상 카드 뷰)
+  @media (max-width: #{$bp-md}) {
+    display: none;
+  }
 }
 
 .viewBtn {
@@ -114,6 +129,13 @@
 
   @media (max-width: #{$bp-md}) {
     grid-template-columns: 1fr;
+  }
+}
+
+// 모바일에서는 카드 그리드 항상 표시 (테이블 대신)
+@media (max-width: #{$bp-md}) {
+  .txTable {
+    display: none !important;
   }
 }
 
@@ -328,7 +350,193 @@
   font-weight: $font-weight-medium;
 }
 
+.complexLink {
+  color: $color-primary-700;
+  font-weight: $font-weight-medium;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    color: $color-primary-800;
+  }
+}
+
 .txPrice {
   font-weight: $font-weight-semibold;
   color: $color-primary-700;
+}
+
+// District picker (no district selected)
+.districtPickerSection {
+  @include flex(column, flex-start, stretch, $spacing-3);
+  padding: $spacing-6;
+  background: $color-gray-50;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+}
+
+.districtPickerHint {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin: 0;
+  line-height: $line-height-relaxed;
+
+  strong {
+    color: $color-primary-700;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.districtGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: $spacing-2;
+}
+
+.districtBtn {
+  padding: $spacing-2 $spacing-3;
+  background: white;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: all $transition-fast;
+  display: block;
+
+  &:hover {
+    background: $color-primary-50;
+    border-color: $color-primary-300;
+    color: $color-primary-700;
+  }
+}
+
+// Search bar
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-2 $spacing-4;
+  transition: border-color $transition-fast;
+
+  &:focus-within {
+    border-color: $color-border-focus;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.searchIcon {
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  background: transparent;
+
+  &::placeholder {
+    color: $color-text-tertiary;
+  }
+}
+
+.searchClear {
+  @include button-reset;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  padding: $spacing-1;
+  border-radius: $radius-sm;
+  line-height: 1;
+
+  &:hover {
+    background: $color-gray-100;
+    color: $color-text-primary;
+  }
+}
+
+// Toolbar left group
+.toolbarLeft {
+  @include flex(row, flex-start, center, $spacing-3);
+  flex-wrap: wrap;
+}
+
+.filterBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px $spacing-3;
+  background: $color-warning-50;
+  color: $color-warning-600;
+  border: 1px solid $color-warning-100;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+// Pagination
+.paginationRow {
+  @include flex(row, center, center, $spacing-4);
+  flex-wrap: wrap;
+  padding: $spacing-4 0;
+}
+
+.pageInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+}
+
+.pagination {
+  @include flex(row, center, center, $spacing-1);
+  flex-wrap: wrap;
+}
+
+.pageBtn {
+  @include button-reset;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 $spacing-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $color-primary-300;
+    color: $color-primary-700;
+    background: $color-primary-50;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pageBtnActive {
+  border-color: $color-primary-600 !important;
+  background: $color-primary-600 !important;
+  color: white !important;
+  font-weight: $font-weight-semibold !important;
+}
+
+.pageEllipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
 }

@@ -4,6 +4,7 @@ import HomePage from '@/pages/Home/HomePage';
 import ListingsPage from '@/pages/Listings/ListingsPage';
 import ListingDetailPage from '@/pages/ListingDetail/ListingDetailPage';
 import ComplexDetailPage from '@/pages/ComplexDetail/ComplexDetailPage';
+import ComplexByNamePage from '@/pages/ComplexDetail/ComplexByNamePage';
 import FavoritesPage from '@/pages/Favorites/FavoritesPage';
 import AlertsPage from '@/pages/Alerts/AlertsPage';
 import LoginPage from '@/pages/Login/LoginPage';
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
       { path: 'listings', element: <ListingsPage /> },
       { path: 'listings/:id', element: <ListingDetailPage /> },
       { path: 'complex/:id', element: <ComplexDetailPage /> },
+      { path: 'complex-detail', element: <ComplexByNamePage /> },
       { path: 'favorites', element: <FavoritesPage /> },
       { path: 'alerts', element: <AlertsPage /> },
     ],

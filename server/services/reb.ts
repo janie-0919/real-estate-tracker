@@ -37,11 +37,17 @@ export interface RebTableRow {
 
 export interface RebDataRow {
   STATBL_ID: string;
-  ITM_ID: string;
-  ITM_NM: string;              // 지역명 (예: 전국, 서울, 강남구)
+  DTACYCLE_CD?: string;
   WRTTIME_IDTFR_ID: string;   // 기준 시점 (예: 202301)
-  DTA_VAL: string;             // 통계값
-  UNIT_NM?: string;            // 단위
+  CLS_ID?: number;
+  CLS_NM: string;              // 지역명 (예: 전국, 서울, 강남구) ← 실제 지역 필드
+  CLS_FULLNM?: string;         // 전체 경로 (예: 서울>동남권)
+  ITM_ID?: number;
+  ITM_NM: string;              // 항목명 (예: 지수, 가격)
+  DTA_VAL: number | string;    // 통계값 (API가 number로 반환)
+  UI_NM?: string;              // 단위 (만원/㎡ 등)
+  UNIT_NM?: string;            // 하위호환 alias
+  WRTTIME_DESC?: string;
 }
 
 // R-ONE API 실제 응답: 배열 형태 [ {head:[...]}, {row:[...]} ]

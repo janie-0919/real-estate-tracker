@@ -34,23 +34,65 @@ function formatChangeRate(rate: number | null): { text: string; sign: 'up' | 'do
   return { text: `- ${text}`, sign: 'flat' };
 }
 
+// 통계표명에서 표시용 짧은 제목 생성
+function cleanTitle(statblNm: string): string {
+  return statblNm
+    .replace(/^\(월\)\s*/, '')   // "(월)" 접두어 제거
+    .replace('지역별 ', '')
+    .replace('_아파트', '')
+    .replace('가격지수', '지수')
+    .replace('평균가격', '평균가')
+    .trim();
+}
+
+// 단위 기준으로 값을 만원 단위로 정규화
+function normalizeValue(
+  value: number,
+  unit: string,
+): { display: string; normUnit: string } {
+  if (unit.includes('천원')) {
+    // 천원 → 만원 (÷10)
+    const v = value / 10;
+    return {
+      display: v.toLocaleString(undefined, { maximumFractionDigits: 1 }),
+      normUnit: unit.replace('천원', '만원'),
+    };
+  }
+  if (unit === '원/㎡' || unit === '원') {
+    // 원 → 만원 (÷10,000)
+    const v = value / 10000;
+    return {
+      display: v.toLocaleString(undefined, { maximumFractionDigits: 1 }),
+      normUnit: unit.replace('원', '만원'),
+    };
+  }
+  if (unit.includes('=')) {
+    // 지수 (예: 2021=100) — 소수점 1자리
+    return { display: value.toFixed(1), normUnit: unit };
+  }
+  // 만원/㎡ 등 — 소수점 최대 2자리
+  return {
+    display: value.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+    normUnit: unit || '만원/㎡',
+  };
+}
+
 function StatCard({ stat }: { stat: RebMarketStat }) {
   const change = formatChangeRate(stat.changeRate);
+  const { display: valueDisplay, normUnit } = normalizeValue(stat.latestValue, stat.unit);
 
-  const chartData = stat.dataPoints.map(p => ({
-    period: formatPeriod(p.period),
-    value: p.value,
-  }));
-
-  const isIndex = stat.unit.includes('=');  // e.g. "2021=100"
-  const valueDisplay = isIndex
-    ? stat.latestValue.toFixed(1)
-    : stat.latestValue.toLocaleString();
+  const chartData = stat.dataPoints.map(p => {
+    const { display } = normalizeValue(p.value, stat.unit);
+    return {
+      period: formatPeriod(p.period),
+      value: parseFloat(display.replace(/,/g, '')),
+    };
+  });
 
   return (
     <div className={styles.card}>
       <div className={styles.cardTop}>
-        <p className={styles.cardTitle}>{stat.statblNm}</p>
+        <p className={styles.cardTitle}>{cleanTitle(stat.statblNm)}</p>
         <span className={`${styles.changeRate} ${styles[change.sign]}`}>
           {change.text}
         </span>
@@ -58,7 +100,7 @@ function StatCard({ stat }: { stat: RebMarketStat }) {
 
       <div className={styles.valueRow}>
         <span className={styles.value}>{valueDisplay}</span>
-        <span className={styles.unit}>{stat.unit || '지수'}</span>
+        <span className={styles.unit}>{normUnit}</span>
       </div>
       <p className={styles.period}>{formatPeriod(stat.latestPeriod)} 기준</p>
 
@@ -127,7 +169,7 @@ export default function RebMarketSection({ district, stats, isLoading, isError }
       {!isLoading && stats.length > 0 && (
         <div className={styles.cardGrid}>
           {stats.map(stat => (
-            <StatCard key={stat.statblId} stat={stat} />
+            <StatCard key={`${stat.statblId}_${stat.region}`} stat={stat} />
           ))}
         </div>
       )}
