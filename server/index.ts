@@ -4,6 +4,7 @@ import cors from 'cors';
 import cron from 'node-cron';
 import transactionRouter from './routes/transactions.js';
 import listingRouter from './routes/listings.js';
+import priceIndexRouter from './routes/priceIndex.js';
 import { cache } from './services/cache.js';
 
 const app = express();
@@ -25,12 +26,14 @@ app.use((req, _res, next) => {
 // ── Routes ────────────────────────────────────────────────────────
 app.use('/api/transactions', transactionRouter);
 app.use('/api/listings', listingRouter);
+app.use('/api/price-index', priceIndexRouter);
 
 // ── Health check ──────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
-    apiKey: process.env.MOLIT_API_KEY ? '설정됨' : '❌ 미설정 - .env에 MOLIT_API_KEY 추가 필요',
+    molitApiKey: process.env.MOLIT_API_KEY ? '설정됨' : '❌ 미설정 - .env에 MOLIT_API_KEY 추가 필요',
+    rebApiKey: process.env.REB_API_KEY ? '설정됨' : '⚠️ 미설정 - sample 키 사용 (10건 제한)',
     cacheEntries: cache.size(),
     uptime: process.uptime(),
   });

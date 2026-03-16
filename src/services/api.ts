@@ -83,6 +83,34 @@ export interface DistrictSummary {
   minPrice: number;
 }
 
+// ── R-ONE 부동산통계정보 타입 ──────────────────────────────────
+
+/** 통계표 목록 항목 */
+export interface RebTableRow {
+  STATBL_ID: string;   // 통계표 ID (fetchPriceIndex에 사용)
+  STATBL_NM: string;   // 통계표명
+  STTS_CYCLE: string;  // 주기 (MM: 월, WK: 주, YY: 연)
+  ORG_ID: string;
+  ORG_NM: string;
+}
+
+/** 가격지수 원본 데이터 행 */
+export interface RebDataRow {
+  STATBL_ID: string;
+  ITM_ID: string;
+  ITM_NM: string;             // 지역명 (예: 전국, 서울, 강남구)
+  WRTTIME_IDTFR_ID: string;   // 기준 시점 (예: 202301)
+  DTA_VAL: string;            // 지수값
+  UNIT_NM?: string;
+}
+
+/** 월간 가격지수 시계열 포인트 (차트용) */
+export interface PriceIndexPoint {
+  period: string;   // 기준 연월 (예: '202301')
+  region: string;   // 지역명
+  value: number;    // 지수값
+}
+
 // ── API 함수 ──────────────────────────────────────────────────────
 
 /** 아파트 실거래가 목록 */
@@ -132,5 +160,54 @@ export const api = {
   /** 지역별 요약 통계 */
   getDistrictSummary() {
     return request<DistrictSummary[]>('/listings/district-summary');
+  },
+
+  // ── R-ONE 부동산통계정보 API ───────────────────────────────────
+
+  /**
+   * 통계표 목록 조회
+   * STATBL_ID를 모를 때 여기서 확인합니다.
+   */
+  getPriceIndexTables() {
+    return request<RebTableRow[]>('/price-index/tables');
+  },
+
+  /**
+   * 가격지수 원본 데이터 조회
+   *
+   * @param statblId  통계표 ID (getPriceIndexTables()로 확인)
+   * @param cycle     데이터 주기: 'MM'(월·기본값) | 'WK'(주) | 'YY'(연)
+   * @param fromPeriod 조회 시작 시점: 월=YYYYMM, 주=YYYYWW, 연=YYYY
+   */
+  getPriceIndex(params: {
+    statblId: string;
+    cycle?: 'MM' | 'WK' | 'YY';
+    fromPeriod?: string;
+    pageSize?: number;
+  }) {
+    return request<RebDataRow[]>('/price-index', params as Record<string, string>);
+  },
+
+  /**
+   * 월간 가격지수 시계열 (차트용)
+   *
+   * @param statblId   통계표 ID
+   * @param fromPeriod 조회 시작 연월 (예: '202501')
+   * @param regions    지역 필터 (예: '전국,서울,강남구') — 생략 시 전체
+   *
+   * @example
+   * // 서울 아파트 매매가격지수 2025년 1월부터
+   * api.getMonthlyPriceIndex({
+   *   statblId: 'A_2024_00240',
+   *   fromPeriod: '202501',
+   *   regions: '전국,서울',
+   * });
+   */
+  getMonthlyPriceIndex(params: {
+    statblId: string;
+    fromPeriod: string;
+    regions?: string;
+  }) {
+    return request<PriceIndexPoint[]>('/price-index/monthly', params as Record<string, string>);
   },
 };
