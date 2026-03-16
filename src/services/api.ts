@@ -1,10 +1,11 @@
 /**
  * 백엔드 API 클라이언트
- * 개발 시: Vite proxy → http://localhost:3001
- * 프로덕션: VITE_API_BASE_URL 환경변수
+ * 개발 시: Vite proxy (/api → http://localhost:3001) → VITE_API_BASE_URL 미설정
+ * 프로덕션: VITE_API_BASE_URL 환경변수에 서버 URL 설정
  */
 
-const BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';
+// 개발 시 VITE_API_BASE_URL을 설정하지 않으면 '/api' 로 fallback → Vite proxy 사용
+const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '/api';
 
 class ApiError extends Error {
   constructor(
@@ -17,7 +18,10 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
-  const url = new URL(`${BASE}${path}`, window.location.origin);
+  // BASE가 절대 URL이면 그대로, 상대 경로면 현재 origin 기준으로 생성
+  const base = BASE.startsWith('http') ? BASE : `${window.location.origin}${BASE}`;
+  const url = new URL(`${base}${path}`);
+
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
