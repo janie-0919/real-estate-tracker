@@ -20,7 +20,8 @@ import xml2js from 'xml2js';
 import type { Transaction } from '../types.js';
 
 const BASE_URL = 'https://apis.data.go.kr/B552554';
-const SERVICE_KEY = process.env.REB_API_KEY ?? '';
+// data.go.kr 실거래 API 키 — R-ONE 통계 API 키(reb.or.kr)와 별개
+const SERVICE_KEY = process.env.DATA_GO_KR_API_KEY ?? process.env.REB_API_KEY ?? '';
 
 const parser = new xml2js.Parser({ explicitArray: false, trim: true });
 

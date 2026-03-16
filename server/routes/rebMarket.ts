@@ -12,7 +12,7 @@
  */
 
 import { Router, type Request, type Response } from 'express';
-import { fetchTableList, fetchPriceIndex, type RebTableRow } from '../services/reb.js';
+import { fetchTableList, fetchPriceIndexRange, type RebTableRow } from '../services/reb.js';
 import { cache, TTL } from '../services/cache.js';
 
 const router = Router();
@@ -28,10 +28,15 @@ function isAptTable(row: RebTableRow, keywords: string[]): boolean {
   return keywords.every(k => nm.includes(k)) && row.STTS_CYCLE === 'MM';
 }
 
-function getFromPeriod(months: number): string {
-  const d = new Date();
-  d.setMonth(d.getMonth() - months);
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`;
+// 최근 N개월의 YYYYMM 배열 반환 (과거 → 현재 순)
+function getMonthRange(months: number): string[] {
+  const result: string[] = [];
+  const now = new Date();
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    result.push(`${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return result;
 }
 
 export interface RebMarketPoint {
@@ -76,15 +81,17 @@ async function fetchMarketStats(
 
   if (targetTables.length === 0) return [];
 
-  const fromPeriod = getFromPeriod(months);
+  // 공식 가이드: WRTTIME_IDTFR_ID는 특정 기간 하나만 필터링
+  // → 여러 달 트렌드 조회 시 달마다 별도 호출 후 합산
+  const monthRange = getMonthRange(months);
   const results: RebMarketStat[] = [];
 
   await Promise.allSettled(
     targetTables.map(async table => {
-      const dataCacheKey = `reb:market:${table.STATBL_ID}:${fromPeriod}`;
-      let rows = cache.get<Awaited<ReturnType<typeof fetchPriceIndex>>>(dataCacheKey);
+      const dataCacheKey = `reb:market:${table.STATBL_ID}:${monthRange[0]}-${monthRange[monthRange.length - 1]}`;
+      let rows = cache.get<Awaited<ReturnType<typeof fetchPriceIndexRange>>>(dataCacheKey);
       if (!rows) {
-        rows = await fetchPriceIndex({ statblId: table.STATBL_ID, cycle: 'MM', fromPeriod });
+        rows = await fetchPriceIndexRange(table.STATBL_ID, 'MM', monthRange);
         cache.set(dataCacheKey, rows, TTL.DISTRICT);
       }
 

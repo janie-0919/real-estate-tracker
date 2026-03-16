@@ -19,7 +19,8 @@
 import axios from 'axios';
 
 const BASE_URL = 'https://www.reb.or.kr/r-one/openapi';
-const API_KEY = process.env.REB_API_KEY ?? 'sample';
+// R-ONE 통계 API 키 (reb.or.kr) — 실거래 API 키(data.go.kr)와 별개
+const API_KEY = process.env.REB_STATS_API_KEY ?? process.env.REB_API_KEY ?? 'sample';
 
 // API 키가 'sample'이면 결과가 10건으로 제한됨
 export const isUsingDefaultKey = () => API_KEY === 'sample';
@@ -143,9 +144,29 @@ export async function fetchPriceIndex(params: FetchIndexParams): Promise<RebData
     DTACYCLE_CD: cycle,
     pSize: pageSize,
   };
+  // 공식 가이드: WRTTIME_IDTFR_ID는 특정 기간 하나만 지정 (범위 아님)
+  // 여러 달 데이터가 필요하면 fetchPriceIndexRange 사용
   if (fromPeriod) reqParams.WRTTIME_IDTFR_ID = fromPeriod;
 
   return rebGet<RebDataRow>('SttsApiTblData.do', reqParams);
+}
+
+// ── 기간 범위 조회 (여러 달 데이터) ─────────────────────────────
+
+export async function fetchPriceIndexRange(
+  statblId: string,
+  cycle: 'MM' | 'WK' | 'YY',
+  periods: string[],
+  pageSize = 1000,
+): Promise<RebDataRow[]> {
+  const results = await Promise.allSettled(
+    periods.map(period =>
+      fetchPriceIndex({ statblId, cycle, fromPeriod: period, pageSize }),
+    ),
+  );
+  return results
+    .filter((r): r is PromiseFulfilledResult<RebDataRow[]> => r.status === 'fulfilled')
+    .flatMap(r => r.value);
 }
 
 // ── 월간 가격지수 시계열 ──────────────────────────────────────────
