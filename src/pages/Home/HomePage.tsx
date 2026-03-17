@@ -304,27 +304,6 @@ export default function HomePage() {
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
         )}
       </section>
-
-      {/* 성동구 최근 실거래 */}
-      {/*<section className={styles.section}>*/}
-      {/*  <div className={styles.sectionHeader}>*/}
-      {/*    <h2 className={styles.sectionTitle}>*/}
-      {/*      <span className={styles.flashIcon}>🌆</span> 성동구 최근 실거래*/}
-      {/*    </h2>*/}
-      {/*    <Link to="/listings?district=서울 성동구" className={styles.seeAll}>더 보기 →</Link>*/}
-      {/*  </div>*/}
-      {/*  {seongdongLoading ? (*/}
-      {/*    <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>*/}
-      {/*  ) : (seongdongTx?.slice(0, 4) ?? []).length > 0 ? (*/}
-      {/*    <div className={styles.listingGrid}>*/}
-      {/*      {seongdongTx!.slice(0, 4).map((t, idx) => (*/}
-      {/*        <TransactionCard key={`${t.id}_${idx}`} transaction={t} />*/}
-      {/*      ))}*/}
-      {/*    </div>*/}
-      {/*  ) : (*/}
-      {/*    <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>*/}
-      {/*  )}*/}
-      {/*</section>*/}
     </div>
   );
 }
