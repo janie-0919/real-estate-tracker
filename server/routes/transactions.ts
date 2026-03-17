@@ -204,7 +204,8 @@ router.get('/national-stats', async (_req: Request, res: Response) => {
     const cached = cache.get<unknown>(cacheKey);
     if (cached) return res.json({ success: true, data: cached });
 
-    const monthList = getRecentMonths(1);
+    // 이번 달 + 전달 조회 (이번 달 신고 누락 방지)
+    const monthList = getRecentMonths(2);
     const districtEntries = Object.entries(DISTRICT_CODES);
 
     const results = await Promise.allSettled(

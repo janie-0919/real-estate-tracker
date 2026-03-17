@@ -75,6 +75,9 @@ router.get('/deviation', async (req: Request, res: Response) => {
 /**
  * GET /api/listings/district-summary
  * 지역별 최근 실거래 요약 (대시보드 통계용)
+ *
+ * 이번 달 데이터가 없으면 전달로 자동 fallback
+ * (국토부 실거래 신고는 30일 이내 → 이번 달 초는 데이터 부족)
  */
 router.get('/district-summary', async (req: Request, res: Response) => {
   try {
@@ -83,17 +86,30 @@ router.get('/district-summary', async (req: Request, res: Response) => {
     const allDistricts = Object.keys(DISTRICT_CODES);
     const prefix = sido ? (sido + ' ') : '서울 ';
     const districts = allDistricts.filter(d => d.startsWith(prefix));
-    const recentMonths = getRecentMonths(1); // 직전 달
+    // 이번 달 + 전달: 이번 달 데이터 부족 시 전달로 fallback
+    const [currentMonth, prevMonth] = getRecentMonths(2);
 
     const summaries = await Promise.allSettled(
       districts.map(async district => {
         const code = DISTRICT_CODES[district];
-        const cacheKey = `summary:${code}:${recentMonths[0]}`;
-        let txs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(cacheKey);
 
+        // 이번 달 조회 (캐시 우선)
+        const curKey = `summary:${code}:${currentMonth}`;
+        let txs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(curKey);
         if (!txs) {
-          txs = await fetchSaleTransactions(code, recentMonths[0]);
-          cache.set(cacheKey, txs, TTL.DISTRICT);
+          txs = await fetchSaleTransactions(code, currentMonth);
+          if (txs.length > 0) cache.set(curKey, txs, TTL.DISTRICT); // 결과 있을 때만 캐시
+        }
+
+        // 이번 달 데이터 없으면 전달로 fallback
+        if (txs.length === 0) {
+          const prevKey = `summary:${code}:${prevMonth}`;
+          let prevTxs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(prevKey);
+          if (!prevTxs) {
+            prevTxs = await fetchSaleTransactions(code, prevMonth);
+            if (prevTxs.length > 0) cache.set(prevKey, prevTxs, TTL.DISTRICT);
+          }
+          txs = prevTxs;
         }
 
         if (txs.length === 0) {
