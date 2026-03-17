@@ -88,9 +88,42 @@
 }
 
 .forgotLink {
+  @include button-reset;
   font-size: $font-size-sm;
   color: $color-primary-600;
+  cursor: pointer;
   &:hover { text-decoration: underline; }
+}
+
+// ── 비밀번호 찾기 탭 헤더 ─────────────────────────────────────────
+
+.forgotHeader {
+  @include flex(column, flex-start, flex-start, $spacing-2);
+  margin-bottom: $spacing-5;
+}
+
+.backBtn {
+  @include button-reset;
+  @include flex(row, flex-start, center, $spacing-1);
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  margin-bottom: $spacing-2;
+  transition: color $transition-fast;
+
+  &:hover { color: $color-text-primary; }
+}
+
+.forgotTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.forgotDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-relaxed;
 }
 
 .divider {
@@ -128,6 +161,37 @@
   &:hover {
     background: $color-gray-50;
     border-color: $color-gray-300;
+  }
+}
+
+.errorMsg {
+  background: $color-danger-50;
+  border: 1px solid $color-danger-100;
+  color: $color-danger-700;
+  border-radius: $radius-md;
+  padding: $spacing-3 $spacing-4;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-1;
+}
+
+.successMsg {
+  background: $color-success-50;
+  border: 1px solid $color-success-100;
+  color: $color-success-700;
+  border-radius: $radius-md;
+  padding: $spacing-3 $spacing-4;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-1;
+}
+
+.kakaoBtn {
+  background: #fee500 !important;
+  color: #111 !important;
+  border-color: #fee500 !important;
+
+  &:hover {
+    background: #f5da00 !important;
+    border-color: #f5da00 !important;
   }
 }
 

@@ -103,11 +103,6 @@ export interface FilterState {
   floorMax?: number;
   buildYearMin?: number;
   buildYearMax?: number;
-  isSubwayNear: boolean;
-  deviationMax?: number;
-  hasPriceChange: boolean;
-  isSuspectedFlash: boolean;
-  renovated: boolean | null;
 }
 
 export interface SortState {

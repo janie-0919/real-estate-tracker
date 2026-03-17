@@ -17,7 +17,7 @@
   @include flex(row, space-between, center, $spacing-4);
   height: 100%;
   padding: 0 $spacing-6;
-  max-width: $layout-max-width;
+  //max-width: $layout-max-width;
   margin: 0 auto;
 }
 
@@ -52,6 +52,10 @@
 
 .searchBox {
   position: relative;
+
+  @media (max-width: #{$bp-md}) {
+    display: none;
+  }
 }
 
 .searchIcon {
@@ -110,6 +114,7 @@
 }
 
 .loginBtn {
+  @include button-reset;
   padding: $spacing-2 $spacing-4;
   background: $color-primary-600;
   color: $color-text-inverse;
@@ -117,8 +122,219 @@
   font-size: $font-size-md;
   font-weight: $font-weight-medium;
   transition: background $transition-fast;
+  text-decoration: none;
+  cursor: pointer;
 
   &:hover {
     background: $color-primary-700;
+  }
+}
+
+.userArea {
+  @include flex(row, flex-start, center, $spacing-3);
+
+  .logoutBtn {
+    @media (max-width: #{$bp-md}) {
+      display: none;
+    }
+  }
+}
+
+.userName {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+
+  strong {
+    color: $color-text-primary;
+    font-weight: $font-weight-medium;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: #{$bp-md}) {
+    display: none;
+  }
+}
+
+.logoutBtn {
+  @include button-reset;
+  padding: $spacing-2 $spacing-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  cursor: pointer;
+  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-danger-600;
+    border-color: $color-danger-100;
+    background: $color-danger-50;
+  }
+}
+
+.authSkeleton {
+  width: 120px;
+  height: 32px;
+  border-radius: $radius-md;
+  background: $color-gray-100;
+  animation: authShimmer 1.5s ease-in-out infinite;
+
+  @keyframes authShimmer {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+}
+
+// ── 모바일 햄버거 버튼 ────────────────────────────────────────────
+
+.menuBtn {
+  @include button-reset;
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  cursor: pointer;
+  display: none;
+  flex-shrink: 0;
+  transition: background $transition-fast;
+
+  &:hover { background: $color-gray-100; }
+
+  @media (max-width: #{$bp-md}) {
+    display: flex;
+  }
+}
+
+// ── 모바일 드로어 ─────────────────────────────────────────────────
+
+.drawer {
+  position: fixed;
+  top: $layout-header-height;
+  left: 0;
+  right: 0;
+  z-index: calc(#{$z-sticky} - 1);
+  background: $color-bg-surface;
+  border-bottom: 1px solid $color-border;
+  box-shadow: $shadow-md;
+  padding: $spacing-4 $spacing-5 $spacing-5;
+  @include flex(column, flex-start, stretch, $spacing-4);
+
+  // 애니메이션
+  transform: translateY(-8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+
+  &.drawerOpen {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  // 데스크탑에서는 숨김
+  @media (min-width: #{$bp-md}) {
+    display: none;
+  }
+}
+
+.drawerSearch {
+  width: 100%;
+
+  .searchBox {
+    position: relative;
+
+    @media (max-width: #{$bp-md}) {
+      display: block;
+    }
+  }
+}
+
+.drawerNav {
+  @include flex(column, flex-start, stretch, $spacing-1);
+  border-top: 1px solid $color-gray-100;
+  padding-top: $spacing-3;
+}
+
+.drawerNavLink {
+  @include flex(row, flex-start, center, $spacing-3);
+  padding: $spacing-3 $spacing-2;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  text-decoration: none;
+  transition: color $transition-fast, background $transition-fast;
+
+  svg { flex-shrink: 0; }
+
+  &:hover {
+    color: $color-text-primary;
+    background: $color-gray-50;
+  }
+}
+
+.drawerFooter {
+  @include flex(row, space-between, center);
+  border-top: 1px solid $color-gray-100;
+  padding-top: $spacing-3;
+}
+
+.drawerUserName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.drawerLogoutBtn {
+  @include button-reset;
+  padding: $spacing-2 $spacing-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  cursor: pointer;
+  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-danger-600;
+    border-color: $color-danger-100;
+    background: $color-danger-50;
+  }
+}
+
+.drawerLoginBtn {
+  width: 100%;
+  display: block;
+  text-align: center;
+  padding: $spacing-3;
+  background: $color-primary-600;
+  color: $color-text-inverse;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  text-decoration: none;
+  transition: background $transition-fast;
+
+  &:hover { background: $color-primary-700; }
+}
+
+// ── 오버레이 ──────────────────────────────────────────────────────
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(#{$z-sticky} - 2);
+  background: rgba(0, 0, 0, 0.3);
+
+  @media (min-width: #{$bp-md}) {
+    display: none;
   }
 }

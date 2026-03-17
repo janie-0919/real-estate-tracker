@@ -5,3 +5,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.env.production
+.vercel
+/.claude/worktrees/eloquent-brahmagupta/.claude/settings.local.json

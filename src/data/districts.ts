@@ -29,6 +29,15 @@ export const SEOUL_DISTRICTS: { name: string; code: string }[] = [
 
 export const SEOUL_DISTRICT_NAMES = SEOUL_DISTRICTS.map(d => d.name);
 
+/** 서울 5대 생활권역 그룹 */
+export const SEOUL_DISTRICT_GROUPS: { label: string; districts: string[] }[] = [
+  { label: '도심권', districts: ['서울 종로구', '서울 중구', '서울 용산구'] },
+  { label: '동북권', districts: ['서울 성동구', '서울 광진구', '서울 동대문구', '서울 중랑구', '서울 성북구', '서울 강북구', '서울 도봉구', '서울 노원구'] },
+  { label: '서북권', districts: ['서울 은평구', '서울 서대문구', '서울 마포구'] },
+  { label: '서남권', districts: ['서울 양천구', '서울 강서구', '서울 구로구', '서울 금천구', '서울 영등포구', '서울 동작구', '서울 관악구'] },
+  { label: '동남권', districts: ['서울 서초구', '서울 강남구', '서울 송파구', '서울 강동구'] },
+];
+
 export const SEOUL_DISTRICT_CODE_MAP: Record<string, string> = Object.fromEntries(
   SEOUL_DISTRICTS.map(d => [d.name, d.code]),
 );

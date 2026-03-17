@@ -6,6 +6,30 @@
   padding-bottom: $spacing-12;
 }
 
+.loginBanner {
+  @include flex(row, flex-start, center, $spacing-2);
+  padding: $spacing-3 $spacing-4;
+  background: $color-warning-50;
+  border: 1px solid $color-warning-100;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-warning-600;
+  flex-wrap: wrap;
+
+  svg { flex-shrink: 0; }
+  strong { font-weight: $font-weight-semibold; }
+}
+
+.loginBannerLink {
+  font-weight: $font-weight-semibold;
+  color: $color-warning-600;
+  text-decoration: underline;
+  white-space: nowrap;
+  margin-left: auto;
+
+  &:hover { color: $color-text-primary; }
+}
+
 .header {
   @include flex(row, space-between, flex-start);
 }
@@ -220,5 +244,148 @@
   &:hover {
     color: $color-danger-600;
     background: $color-danger-50;
+  }
+}
+
+// ── Slider ──────────────────────────────────────────────────────────────────
+.sliderRow {
+  @include flex(row, flex-start, flex-start, $spacing-4);
+  flex-wrap: wrap;
+
+  > * { flex: 1; min-width: 180px; }
+}
+
+.sliderField {
+  @include flex(column, flex-start, stretch, $spacing-2);
+}
+
+.sliderHeader {
+  @include flex(row, space-between, center);
+}
+
+.sliderLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sliderValueBadge {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-primary-700;
+  background: $color-primary-50;
+  border: 1px solid $color-primary-200;
+  border-radius: $radius-full;
+  padding: 2px $spacing-3;
+  min-width: 64px;
+  text-align: center;
+}
+
+.sliderTrack {
+  position: relative;
+  height: 20px;
+  @include flex(row, flex-start, center);
+}
+
+.sliderFill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  background: $color-primary-500;
+  border-radius: $radius-full;
+  pointer-events: none;
+  z-index: 1;
+  max-width: 100%;
+}
+
+.slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: $color-gray-200;
+  border-radius: $radius-full;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: $color-bg-surface;
+    border: 3px solid $color-primary-500;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    cursor: pointer;
+    transition: transform $transition-fast, box-shadow $transition-fast;
+
+    &:hover {
+      transform: scale(1.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+    }
+  }
+
+  &::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: $color-bg-surface;
+    border: 3px solid $color-primary-500;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    cursor: pointer;
+  }
+
+  &::-webkit-slider-runnable-track {
+    background: transparent;
+    border-radius: $radius-full;
+  }
+
+  &::-moz-range-track {
+    background: $color-gray-200;
+    height: 6px;
+    border-radius: $radius-full;
+  }
+}
+
+.sliderTicks {
+  @include flex(row, space-between, center);
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  padding: 0 2px;
+}
+
+// ── Toggle Switch ─────────────────────────────────────────────────────────
+.toggleTrack {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: $color-gray-300;
+  border-radius: $radius-full;
+  transition: background $transition-fast;
+  cursor: pointer;
+
+  &.toggleOn {
+    background: $color-primary-500;
+  }
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: $color-bg-surface;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform $transition-fast;
+
+  .toggleOn & {
+    transform: translateX(16px);
   }
 }

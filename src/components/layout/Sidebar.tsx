@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { SEOUL_DISTRICT_NAMES } from '@/data/districts';
 import { useFavoriteDistricts } from '@/hooks/useFavoriteDistricts';
 import styles from './Sidebar.module.scss';
@@ -51,6 +51,9 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const { favorites, toggle, isFavorite } = useFavoriteDistricts();
   const [isEditing, setIsEditing] = useState(false);
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const activeDistrict = location.pathname === '/listings' ? searchParams.get('district') : null;
 
   return (
     <aside className={styles.sidebar}>
@@ -121,11 +124,9 @@ export default function Sidebar() {
             <ul className={styles.navList}>
               {favorites.map(district => (
                 <li key={district}>
-                  <NavLink
+                  <Link
                     to={`/listings?district=${encodeURIComponent(district)}`}
-                    className={({ isActive }) =>
-                      `${styles.navItem} ${isActive ? styles.active : ''}`
-                    }
+                    className={`${styles.navItem} ${activeDistrict === district ? styles.active : ''}`}
                   >
                     <span className={styles.icon}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -136,7 +137,7 @@ export default function Sidebar() {
                     <span className={styles.districtName}>
                       {district.replace('서울 ', '')}
                     </span>
-                  </NavLink>
+                  </Link>
                 </li>
               ))}
             </ul>

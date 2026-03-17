@@ -49,25 +49,27 @@ app.use('/api', (_req, _res, next) => {
 });
 
 // ── Scheduled cache warm-up ───────────────────────────────────────
-// 매일 오전 1시 캐시 초기화 (새 데이터로 갱신)
-cron.schedule('0 1 * * *', () => {
-  console.log('[CRON] 캐시 초기화');
-  cache.clear();
-});
-
-// ── Start ─────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n🏠 부동산 트래커 서버 시작`);
-  console.log(`   URL: http://localhost:${PORT}`);
-  console.log(`   Health: http://localhost:${PORT}/health`);
-  if (!process.env.REB_API_KEY) {
-    console.log(`\n⚠️  REB_API_KEY 미설정`);
-    console.log(`   1. https://www.data.go.kr 에서 B552554(한국부동산원) 서비스 신청 후 인증키 발급`);
-    console.log(`   2. https://www.reb.or.kr/r-one 에서 통계 API 인증키 발급`);
-    console.log(`   3. .env 파일에 REB_API_KEY=발급받은키 추가\n`);
-  } else {
-    console.log(`   REB API Key: ${process.env.REB_API_KEY.slice(0, 8)}...`);
-  }
-});
+// 매일 오전 1시 캐시 초기화 (로컬 서버 전용 - serverless 환경에서는 실행 안 됨)
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_CRON === 'true') {
+  cron.schedule('0 1 * * *', () => {
+    console.log('[CRON] 캐시 초기화');
+    cache.clear();
+  });
+}
 
 export default app;
+
+// ── Start (로컬 개발 전용) ─────────────────────────────────────────
+// Vercel serverless에서는 이 블록이 실행되지 않음
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`\n🏠 부동산 트래커 서버 시작`);
+    console.log(`   URL: http://localhost:${PORT}`);
+    console.log(`   Health: http://localhost:${PORT}/health`);
+    if (!process.env.REB_API_KEY) {
+      console.log(`\n⚠️  REB_API_KEY 미설정`);
+    } else {
+      console.log(`   REB API Key: ${process.env.REB_API_KEY.slice(0, 8)}...`);
+    }
+  });
+}

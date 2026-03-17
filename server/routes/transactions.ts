@@ -29,15 +29,17 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // 조회 개월 목록 구성
-    const months = yearMonth ? [yearMonth] : getRecentMonths(3);
+    // 조회 개월 목록 구성 (최신 데이터 반영을 위해 6개월로 확장)
+    const months = yearMonth ? [yearMonth] : getRecentMonths(6);
     const cacheKey = `tx:${code}:${months.join('-')}:${dealType}`;
 
-    // 캐시 확인
+    // 캐시 확인 (빈 결과는 캐시하지 않음 — API 데이터 공개 시차 대응)
     let transactions = cache.get<Awaited<ReturnType<typeof fetchTransactionRange>>>(cacheKey);
     if (!transactions) {
       transactions = await fetchTransactionRange(code, months, dealType as 'sale' | 'lease' | 'all');
-      cache.set(cacheKey, transactions, TTL.TRANSACTION);
+      if (transactions.length > 0) {
+        cache.set(cacheKey, transactions, TTL.TRANSACTION);
+      }
     }
 
     // 단지명 필터
@@ -101,7 +103,9 @@ router.get('/complex-stats', async (req: Request, res: Response) => {
     if (!stats) {
       const txs = await fetchTransactionRange(code, monthList, 'sale');
       stats = aggregateByComplex(txs);
-      cache.set(cacheKey, stats, TTL.DISTRICT);
+      if (stats.size > 0) {
+        cache.set(cacheKey, stats, TTL.DISTRICT);
+      }
     }
 
     const minCountNum = parseInt(minCount, 10);
@@ -122,6 +126,62 @@ router.get('/complex-stats', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('[/api/transactions/complex-stats]', err);
     return res.status(500).json({ success: false, error: '통계 조회 실패' });
+  }
+});
+
+/**
+ * GET /api/transactions/top-complexes
+ * 서울 전체(25개 구) 최고가 단지 TOP N
+ *
+ * Query params:
+ *   months - 조회 개월수 (기본 1)
+ *   limit  - 반환 단지 수 (기본 4)
+ */
+router.get('/top-complexes', async (req: Request, res: Response) => {
+  try {
+    const { months = '1', limit = '4' } = req.query as Record<string, string>;
+    const monthList = getRecentMonths(parseInt(months, 10));
+    const limitNum = parseInt(limit, 10);
+
+    const cacheKey = `top-complexes:${monthList.join('-')}:${limitNum}`;
+    const cached = cache.get<unknown[]>(cacheKey);
+    if (cached) return res.json({ success: true, data: cached });
+
+    // 25개 구 병렬 fetch
+    const districtEntries = Object.entries(DISTRICT_CODES);
+    const results = await Promise.allSettled(
+      districtEntries.map(async ([districtName, code]) => {
+        const txs = await fetchTransactionRange(code, monthList, 'sale');
+        const stats = aggregateByComplex(txs);
+        return Array.from(stats.values()).map(s => ({
+          complexName: s.complexName,
+          neighborhood: s.neighborhood,
+          district: districtName,
+          avgPrice: s.avgPrice,
+          minPrice: s.minPrice,
+          maxPrice: s.maxPrice,
+          transactionCount: s.transactions.length,
+          recentTransactions: s.transactions.slice(0, 3),
+        }));
+      })
+    );
+
+    const allComplexes = results
+      .filter((r): r is PromiseFulfilledResult<typeof r extends PromiseFulfilledResult<infer V> ? V : never> => r.status === 'fulfilled')
+      .flatMap(r => r.value);
+
+    const top = allComplexes
+      .sort((a, b) => b.maxPrice - a.maxPrice)
+      .slice(0, limitNum);
+
+    if (top.length > 0) {
+      cache.set(cacheKey, top, TTL.DISTRICT);
+    }
+
+    return res.json({ success: true, data: top });
+  } catch (err) {
+    console.error('[/api/transactions/top-complexes]', err);
+    return res.status(500).json({ success: false, error: '최고가 단지 조회 실패' });
   }
 });
 

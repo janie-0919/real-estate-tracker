@@ -16,6 +16,7 @@ import {
   Line,
 } from 'recharts';
 import { useTransactions, usePriceTrend, toChartData } from '@/hooks/useTransactions';
+import { useFavoriteComplexes } from '@/hooks/useFavoriteComplexes';
 import { SEOUL_DISTRICT_CODE_MAP } from '@/data/districts';
 import { formatPrice, formatDate, formatDealType } from '@/utils/format';
 import Badge from '@/components/ui/Badge';
@@ -32,6 +33,8 @@ export default function ComplexByNamePage() {
 
   const [page, setPage] = useState(1);
   const [dealFilter, setDealFilter] = useState<'all' | 'sale' | 'lease' | 'monthly'>('all');
+  const { toggle: toggleFav, isFavorite } = useFavoriteComplexes();
+  const faved = isFavorite(name, district);
 
   const { data: transactions, isLoading: txLoading } = useTransactions({
     district,
@@ -101,10 +104,21 @@ export default function ComplexByNamePage() {
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>{name}</h1>
+          <h1 className={styles.title}><span>{name}</span><button
+              className={`${styles.favBtn} ${faved ? styles.favBtnActive : ''}`}
+              onClick={() => toggleFav(name, district)}
+              title={faved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={faved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+            </svg>
+            {faved ? '즐겨찾기 해제' : '즐겨찾기'}
+          </button></h1>
           <p className={styles.address}>{district}</p>
         </div>
-        <span className={styles.dataLabel}>국토교통부 공공 데이터</span>
+        <div className={styles.headerActions}>
+          <span className={styles.dataLabel}>국토교통부 공공 데이터</span>
+        </div>
       </div>
 
       {/* 요약 통계 */}

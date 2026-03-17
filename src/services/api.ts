@@ -186,6 +186,14 @@ export const api = {
     return request<DistrictSummary[]>('/listings/district-summary');
   },
 
+  /** 서울 전체 최고가 단지 TOP N */
+  getTopComplexes(params?: { months?: number; limit?: number }) {
+    return request<(ComplexStat & { district: string })[]>(
+      '/transactions/top-complexes',
+      params as unknown as Record<string, string>,
+    );
+  },
+
   // ── R-ONE 부동산통계정보 API ───────────────────────────────────
 
   /**

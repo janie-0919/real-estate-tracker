@@ -105,6 +105,15 @@ export function useDeviation(params: {
   });
 }
 
+// ── 서울 전체 최고가 단지 ─────────────────────────────────────────
+export function useTopComplexes(params?: { months?: number; limit?: number }) {
+  return useQuery({
+    queryKey: ['top-complexes', params],
+    queryFn: () => api.getTopComplexes(params),
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
 // ── 지역 요약 ─────────────────────────────────────────────────────
 export function useDistrictSummary() {
   return useQuery({

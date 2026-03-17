@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { parseSearchQuery, buildListingsUrl } from '@/utils/search';
-import { useDistrictSummary, useComplexStats, useTransactions } from '@/hooks/useTransactions';
+import { useDistrictSummary, useTopComplexes, useTransactions } from '@/hooks/useTransactions';
+import type { ComplexStat } from '@/services/api';
 import TransactionCard from '@/components/listings/TransactionCard';
 import { formatPrice } from '@/utils/format';
 import styles from './HomePage.module.scss';
@@ -16,25 +17,16 @@ export default function HomePage() {
   // 지역별 요약 (stat cards + region table)
   const { data: districtSummary, isLoading: summaryLoading } = useDistrictSummary();
 
-  // 강남구 단지별 통계 (최고가 거래 섹션)
-  const { data: gangnamStats, isLoading: gangnamLoading } = useComplexStats({
-    district: '서울 강남구',
-    months: 1,
-  });
+  // 서울 전체 최고가 단지 (25개 구 통합)
+  const { data: topComplexes, isLoading: topStatsLoading } = useTopComplexes({ months: 1, limit: 4 });
 
-  // 서초구 최근 실거래 (최근 거래 섹션)
-  const { data: seochoTx, isLoading: seochoLoading } = useTransactions({
-    district: '서울 서초구',
-    dealType: 'sale',
-  });
+  // 최근 실거래: 강남·마포·용산·성동
+  const { data: gangnamTx,   isLoading: gangnamLoading }   = useTransactions({ district: '서울 강남구',  dealType: 'sale' });
+  const { data: mapoTx,      isLoading: mapoLoading }      = useTransactions({ district: '서울 마포구',  dealType: 'sale' });
+  const { data: yongsanTx,   isLoading: yongsanLoading }   = useTransactions({ district: '서울 용산구',  dealType: 'sale' });
+  const { data: seongdongTx, isLoading: seongdongLoading } = useTransactions({ district: '서울 성동구',  dealType: 'sale' });
 
-  // 마포구 최근 실거래
-  const { data: mapoTx, isLoading: mapoLoading } = useTransactions({
-    district: '서울 마포구',
-    dealType: 'sale',
-  });
-
-  // Stat cards from district summary
+  // stat cards
   const totalTx = districtSummary?.reduce((sum, d) => sum + d.count, 0) ?? 0;
   const districtsWithData = districtSummary?.filter(d => d.avgPrice > 0) ?? [];
   const overallAvgPrice = districtsWithData.length > 0
@@ -65,18 +57,6 @@ export default function HomePage() {
       sub: topDistrict ? `${topDistrict.count}건 거래` : '집계 중',
     },
   ];
-
-  // 최고가 단지 Top 4 (강남구)
-  const topComplexes = gangnamStats
-    ?.slice()
-    .sort((a, b) => b.maxPrice - a.maxPrice)
-    .slice(0, 4) ?? [];
-
-  // 서초구 최신 4건
-  const seochoRecent = seochoTx?.slice(0, 4) ?? [];
-
-  // 마포구 최신 4건
-  const mapoRecent = mapoTx?.slice(0, 4) ?? [];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,26 +172,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 강남구 최고가 단지 */}
+      {/* 서울 최고가 실거래 단지 (전체) */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
-            <span className={styles.upIcon}>🏆</span> 강남구 최고가 실거래 단지
+            <span className={styles.upIcon}>🏆</span> 서울 최고가 실거래 단지 TOP 4
           </h2>
-          <Link to="/listings?district=서울 강남구&sort=price_desc" className={styles.seeAll}>더 보기 →</Link>
+          {/*<span className={styles.dataLabel}>강남·서초·용산·송파 합산</span>*/}
         </div>
-        {gangnamLoading ? (
+        {topStatsLoading ? (
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
         ) : topComplexes.length > 0 ? (
           <div className={styles.listingGrid}>
             {topComplexes.map(c => (
               <Link
                 key={`${c.complexName}_${c.neighborhood}`}
-                to={`/listings?district=서울 강남구&q=${encodeURIComponent(c.complexName)}`}
+                to={`/complex-detail?name=${encodeURIComponent(c.complexName)}&district=${encodeURIComponent(c.district)}`}
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <div className={styles.statCard}>
-                  <p className={styles.statLabel}>{c.neighborhood}</p>
+                  <p className={styles.statLabel}>{c.district.replace('서울 ', '')} · {c.neighborhood}</p>
                   <p className={styles.statValue} style={{ fontSize: '1rem' }}>{c.complexName}</p>
                   <p style={{ fontSize: '1.125rem', fontWeight: 700, color: '#1d4ed8', margin: '0.5rem 0 0.25rem' }}>
                     최고 {formatPrice(c.maxPrice)}
@@ -228,19 +208,19 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* 서초구 최근 실거래 */}
+      {/* 강남구 최근 실거래 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
-            <span className={styles.downIcon}>🏠</span> 서초구 최근 실거래
+            <span className={styles.upIcon}>🏠</span> 강남구 최근 실거래
           </h2>
-          <Link to="/listings?district=서울 서초구" className={styles.seeAll}>더 보기 →</Link>
+          <Link to="/listings?district=서울 강남구" className={styles.seeAll}>더 보기 →</Link>
         </div>
-        {seochoLoading ? (
+        {gangnamLoading ? (
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
-        ) : seochoRecent.length > 0 ? (
+        ) : (gangnamTx?.slice(0, 4) ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
-            {seochoRecent.map((t, idx) => (
+            {gangnamTx!.slice(0, 4).map((t, idx) => (
               <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
             ))}
           </div>
@@ -259,9 +239,51 @@ export default function HomePage() {
         </div>
         {mapoLoading ? (
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
-        ) : mapoRecent.length > 0 ? (
+        ) : (mapoTx?.slice(0, 4) ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
-            {mapoRecent.map((t, idx) => (
+            {mapoTx!.slice(0, 4).map((t, idx) => (
+              <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
+        )}
+      </section>
+
+      {/* 용산구 최근 실거래 */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>
+            <span className={styles.downIcon}>🏢</span> 용산구 최근 실거래
+          </h2>
+          <Link to="/listings?district=서울 용산구" className={styles.seeAll}>더 보기 →</Link>
+        </div>
+        {yongsanLoading ? (
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
+        ) : (yongsanTx?.slice(0, 4) ?? []).length > 0 ? (
+          <div className={styles.listingGrid}>
+            {yongsanTx!.slice(0, 4).map((t, idx) => (
+              <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
+        )}
+      </section>
+
+      {/* 성동구 최근 실거래 */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>
+            <span className={styles.flashIcon}>🌆</span> 성동구 최근 실거래
+          </h2>
+          <Link to="/listings?district=서울 성동구" className={styles.seeAll}>더 보기 →</Link>
+        </div>
+        {seongdongLoading ? (
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
+        ) : (seongdongTx?.slice(0, 4) ?? []).length > 0 ? (
+          <div className={styles.listingGrid}>
+            {seongdongTx!.slice(0, 4).map((t, idx) => (
               <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
             ))}
           </div>

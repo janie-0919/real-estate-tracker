@@ -4,7 +4,7 @@ import type { FilterState } from '@/types';
 import { formatPrice, formatDate, formatDealType } from '@/utils/format';
 import { useTransactions, useRebMarket } from '@/hooks/useTransactions';
 import type { RealTransaction } from '@/services/api';
-import { SEOUL_DISTRICT_CODE_MAP, SEOUL_DISTRICTS } from '@/data/districts';
+import { SEOUL_DISTRICT_CODE_MAP, SEOUL_DISTRICT_GROUPS } from '@/data/districts';
 import RebMarketSection from '@/components/listings/RebMarketSection';
 import TransactionCard from '@/components/listings/TransactionCard';
 import ListingFilter from '@/components/listings/ListingFilter';
@@ -16,10 +16,6 @@ import styles from './ListingsPage.module.scss';
 const DEFAULT_FILTER: FilterState = {
   dealType: 'all',
   districts: [],
-  isSubwayNear: false,
-  hasPriceChange: false,
-  isSuspectedFlash: false,
-  renovated: null,
 };
 
 const PAGE_SIZE = 20;
@@ -224,15 +220,28 @@ export default function ListingsPage() {
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>
-            {selectedDistrict ? `${selectedDistrict} 실거래 내역` : '서울 실거래 내역'}
+            {selectedDistrict ? `${selectedDistrict} 실거래` : '서울 실거래 내역'}
           </h1>
+          {selectedDistrict && (
+            <p className={styles.titleSub}>최근 6개월 국토교통부 실거래 신고 자료</p>
+          )}
         </div>
-        {selectedDistrict && transactions && (
-          <p className={styles.resultCount}>
-            총 <strong>{filtered.length}</strong>건
-            {filtered.length !== transactions.length && ` / 전체 ${transactions.length}건`}
-          </p>
-        )}
+        <div className={styles.pageHeaderRight}>
+          {selectedDistrict && (
+            <Link to="/listings" className={styles.changeDistrictBtn}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              지역 변경
+            </Link>
+          )}
+          {selectedDistrict && transactions && (
+            <p className={styles.resultCount}>
+              총 <strong>{filtered.length}</strong>건
+              {filtered.length !== transactions.length && ` / ${transactions.length}건`}
+            </p>
+          )}
+        </div>
       </div>
 
       {selectedDistrict && (
@@ -264,24 +273,33 @@ export default function ListingsPage() {
 
       {!selectedDistrict && (
         <div className={styles.districtPickerSection}>
-          {urlQuery ? (
-            <p className={styles.districtPickerHint}>
-              🔍 <strong>"{urlQuery}"</strong> 검색 중 — 아래에서 지역을 선택하면 해당 지역 내 결과를 바로 볼 수 있습니다
-            </p>
-          ) : (
-            <p className={styles.districtPickerHint}>
-              📍 지역을 선택하면 최근 3개월 실거래 데이터를 불러옵니다
-            </p>
-          )}
-          <div className={styles.districtGrid}>
-            {SEOUL_DISTRICTS.map(d => (
-              <Link
-                key={d.code}
-                to={`/listings?district=${encodeURIComponent(d.name)}${urlQuery ? `&q=${encodeURIComponent(urlQuery)}` : ''}`}
-                className={styles.districtBtn}
-              >
-                {d.name.replace('서울 ', '')}
-              </Link>
+          <div className={styles.districtPickerHeader}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            {urlQuery ? (
+              <span><strong>"{urlQuery}"</strong> 검색 — 지역을 선택하면 해당 지역 결과를 바로 볼 수 있습니다</span>
+            ) : (
+              <span>조회할 지역을 선택하세요 · 최근 6개월 실거래 데이터를 불러옵니다</span>
+            )}
+          </div>
+          <div className={styles.districtGroupList}>
+            {SEOUL_DISTRICT_GROUPS.map(group => (
+              <div key={group.label} className={styles.districtGroup}>
+                <span className={styles.districtGroupLabel}>{group.label}</span>
+                <div className={styles.districtGrid}>
+                  {group.districts.map(name => (
+                    <Link
+                      key={name}
+                      to={`/listings?district=${encodeURIComponent(name)}${urlQuery ? `&q=${encodeURIComponent(urlQuery)}` : ''}`}
+                      className={styles.districtBtn}
+                    >
+                      {name.replace('서울 ', '')}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>

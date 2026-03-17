@@ -8,6 +8,7 @@ import ComplexByNamePage from '@/pages/ComplexDetail/ComplexByNamePage';
 import FavoritesPage from '@/pages/Favorites/FavoritesPage';
 import AlertsPage from '@/pages/Alerts/AlertsPage';
 import LoginPage from '@/pages/Login/LoginPage';
+import ResetPasswordPage from '@/pages/ResetPassword/ResetPasswordPage';
 import NotFoundPage from '@/pages/NotFound/NotFoundPage';
 
 export const router = createBrowserRouter([
@@ -25,5 +26,6 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '/login', element: <LoginPage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
   { path: '*', element: <NotFoundPage /> },
 ]);

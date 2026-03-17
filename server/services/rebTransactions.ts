@@ -193,8 +193,8 @@ export async function fetchLeaseTransactions(
   districtCode: string,
   yearMonth: string,
 ): Promise<Transaction[]> {
-  // 기술문서: 전월세 API 응답 형식은 XML
-  const res = await axios.get(
+  // 전월세 API: 실제 응답은 JSON (기술문서와 달리 XML이 아님)
+  const res = await axios.get<DataGoKrResponse<AptRentItem>>(
     `${BASE_URL}/RTMSDataSvcAptRent/getRTMSDataSvcAptRent`,
     {
       params: {
@@ -204,7 +204,6 @@ export async function fetchLeaseTransactions(
         numOfRows: 1000,
         pageNo: 1,
       },
-      responseType: 'text',    // XML 응답이므로 text로 받아서 직접 파싱
       timeout: 10_000,
       validateStatus: () => true,
     },
@@ -219,22 +218,13 @@ export async function fetchLeaseTransactions(
     return [];
   }
 
-  // XML 파싱
-  let parsed: { response: { header: { resultCode: string; resultMsg: string }; body: { items: { item: AptRentItem | AptRentItem[] } | ''; numOfRows: string; pageNo: string; totalCount: string } } };
-  try {
-    parsed = await parseXml(res.data as string);
-  } catch (e) {
-    console.warn('[fetchLeaseTransactions] XML 파싱 실패:', e);
-    return [];
-  }
-
-  const header = parsed.response?.header;
+  const header = res.data?.response?.header;
   if (header?.resultCode !== '000') {
     console.warn(`[fetchLeaseTransactions] API 오류: ${header?.resultCode} - ${header?.resultMsg}`);
     return [];
   }
 
-  const bodyItems = parsed.response?.body?.items;
+  const bodyItems = res.data?.response?.body?.items;
   if (!bodyItems || typeof bodyItems !== 'object' || !('item' in bodyItems) || !bodyItems.item) return [];
 
   const items: AptRentItem[] = Array.isArray(bodyItems.item)

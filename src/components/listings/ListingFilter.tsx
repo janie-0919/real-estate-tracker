@@ -46,37 +46,6 @@ export default function ListingFilter({ filter, onChange, onReset }: ListingFilt
           </div>
         </div>
 
-        {/* Special filters */}
-        <div className={styles.filterGroup}>
-          <label className={styles.groupLabel}>특수 필터</label>
-          <div className={styles.checkboxGroup}>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={filter.isSubwayNear}
-                onChange={e => update('isSubwayNear', e.target.checked)}
-              />
-              역세권
-            </label>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={filter.hasPriceChange}
-                onChange={e => update('hasPriceChange', e.target.checked)}
-              />
-              가격 변동
-            </label>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={filter.isSuspectedFlash}
-                onChange={e => update('isSuspectedFlash', e.target.checked)}
-              />
-              급매 추정
-            </label>
-          </div>
-        </div>
-
         <div className={styles.filterActions}>
           <button className={styles.expandBtn} onClick={() => setIsExpanded(!isExpanded)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -174,18 +143,6 @@ export default function ListingFilter({ filter, onChange, onReset }: ListingFilt
               </div>
             </div>
 
-            <div className={styles.filterGroup}>
-              <label className={styles.groupLabel}>실거래 대비 (%)</label>
-              <div className={styles.rangeRow}>
-                <input
-                  type="number"
-                  placeholder="이하"
-                  value={filter.deviationMax ?? ''}
-                  onChange={e => update('deviationMax', e.target.value ? Number(e.target.value) : undefined)}
-                  className={styles.rangeInput}
-                />
-              </div>
-            </div>
           </div>
         </div>
       )}

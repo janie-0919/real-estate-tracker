@@ -27,6 +27,28 @@
   font-weight: $font-weight-medium;
 }
 
+.loginBanner {
+  @include flex(row, flex-start, center, $spacing-2);
+  padding: $spacing-3 $spacing-4;
+  background: $color-primary-50;
+  border: 1px solid $color-primary-100;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-primary-700;
+  flex-wrap: wrap;
+
+  svg { flex-shrink: 0; color: $color-primary-500; }
+}
+
+.loginBannerLink {
+  font-weight: $font-weight-semibold;
+  color: $color-primary-600;
+  text-decoration: underline;
+  white-space: nowrap;
+
+  &:hover { color: $color-primary-700; }
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -36,57 +58,116 @@
   @media (max-width: #{$bp-sm}) { grid-template-columns: 1fr; }
 }
 
-.listingWrapper {
-  @include flex(column, flex-start, stretch);
-  border-radius: $radius-lg;
-  overflow: hidden;
-  box-shadow: $shadow-sm;
-  border: 1px solid $color-border;
+.complexCard {
+  @include card;
+  @include flex(column, flex-start, stretch, $spacing-0);
+  padding: $spacing-4 $spacing-5;
 }
 
-.noteSection {
-  background: $color-gray-50;
-  border-top: 1px solid $color-gray-100;
-  padding: $spacing-2 $spacing-3;
+.complexLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  margin-bottom: $spacing-3;
+
+  &:hover .complexName { color: $color-primary-600; }
 }
 
-.noteEdit {
-  @include flex(column, flex-start, stretch, $spacing-2);
-}
-
-.noteInput {
-  width: 100%;
-  padding: $spacing-2;
-  border: 1px solid $color-border;
-  border-radius: $radius-sm;
-  font-size: $font-size-sm;
-  font-family: inherit;
-  resize: none;
-  background: white;
-
-  &:focus {
-    outline: none;
-    border-color: $color-primary-400;
-  }
-}
-
-.noteBtn {
-  @include button-reset;
-  width: 100%;
-  text-align: left;
-  padding: $spacing-1;
-}
-
-.noteText {
-  font-size: $font-size-sm;
+.complexName {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
   color: $color-text-primary;
+  margin-bottom: $spacing-1;
+  transition: color $transition-fast;
 }
 
-.notePlaceholder {
+.complexDistrict {
   font-size: $font-size-sm;
   color: $color-text-secondary;
+}
 
-  &:hover { color: $color-primary-600; }
+// ── 실거래 통계 영역 ─────────────────────────────────────────────
+
+.statsArea {
+  @include flex(column, flex-start, stretch, $spacing-2);
+  margin-bottom: $spacing-3;
+  min-height: 48px;
+}
+
+.statRow {
+  @include flex(row, flex-start, center, $spacing-2);
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+
+  &.label_sale    { background: $color-primary-50;  color: $color-primary-700; }
+  &.label_lease   { background: $color-success-50;  color: $color-success-700; }
+  &.label_monthly { background: $color-warning-50;  color: $color-warning-600; }
+}
+
+.statPrice {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  flex: 1;
+}
+
+.statDate {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.noData {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  font-style: italic;
+}
+
+.skeletonRow {
+  height: 20px;
+  border-radius: $radius-sm;
+  background: linear-gradient(90deg, $color-gray-100 25%, $color-gray-50 50%, $color-gray-100 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  width: 100%;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.complexFooter {
+  @include flex(row, space-between, center);
+  border-top: 1px solid $color-gray-100;
+  padding-top: $spacing-2;
+  margin-top: $spacing-1;
+}
+
+.addedAt {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.removeBtn {
+  @include button-reset;
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-sm;
+  color: $color-text-secondary;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-danger-600;
+    background: $color-danger-50;
+  }
 }
 
 .footer {
