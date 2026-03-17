@@ -19,13 +19,13 @@ export default function HomePage() {
   // 서울 최고가 단지 (sido=서울 → 25개 구만 조회)
   const { data: topComplexes, isLoading: topStatsLoading } = useTopComplexes({ months: 1, limit: 4, sido: '서울' });
 
-  // 전국 통계 — top-complexes 완료 후 실행 (서버 캐시 재사용으로 빠름)
+  // 전국 통계 — top-complexes 완료 후 실행
   const { data: nationalStats, isLoading: nationalLoading } = useNationalStats();
 
   // 최근 실거래: 강남·마포·용산·성동
-  const { data: gangnamTx,   isLoading: gangnamLoading }   = useTransactions({ district: '서울 강남구',  dealType: 'sale', limit: 4 });
-  const { data: mapoTx,      isLoading: mapoLoading }      = useTransactions({ district: '서울 마포구',  dealType: 'sale', limit: 4 });
-  const { data: yongsanTx,   isLoading: yongsanLoading }   = useTransactions({ district: '서울 용산구',  dealType: 'sale', limit: 4 });
+  const { data: gangnamTx,   isLoading: gangnamLoading }   = useTransactions({ district: '서울 강남구',  dealType: 'sale' });
+  const { data: mapoTx,      isLoading: mapoLoading }      = useTransactions({ district: '서울 마포구',  dealType: 'sale' });
+  const { data: yongsanTx,   isLoading: yongsanLoading }   = useTransactions({ district: '서울 용산구',  dealType: 'sale' });
 
   // ── 서울 통계 계산 ──
   const seoulTotalTx = districtSummary?.reduce((sum, d) => sum + d.count, 0) ?? 0;
@@ -251,10 +251,10 @@ export default function HomePage() {
         </div>
         {gangnamLoading ? (
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
-        ) : (gangnamTx ?? []).length > 0 ? (
+        ) : (gangnamTx?.slice(0, 4) ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
-            {(gangnamTx ?? []).slice(0, 4).map((t, idx) => (
-                <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
+            {gangnamTx!.slice(0, 4).map((t, idx) => (
+              <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
             ))}
           </div>
         ) : (
@@ -272,10 +272,10 @@ export default function HomePage() {
         </div>
         {mapoLoading ? (
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
-        ) : (mapoTx ?? []).length > 0 ? (
+        ) : (mapoTx?.slice(0, 4) ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
-            {(mapoTx ?? []).slice(0, 4).map((t, idx) => (
-                <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
+            {mapoTx!.slice(0, 4).map((t, idx) => (
+              <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
             ))}
           </div>
         ) : (
@@ -293,10 +293,10 @@ export default function HomePage() {
         </div>
         {yongsanLoading ? (
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
-        ) : (yongsanTx ?? []).length > 0 ? (
+        ) : (yongsanTx?.slice(0, 4) ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
-            {(yongsanTx ?? []).slice(0, 4).map((t, idx) => (
-                <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
+            {yongsanTx!.slice(0, 4).map((t, idx) => (
+              <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
             ))}
           </div>
         ) : (
