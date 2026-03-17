@@ -124,27 +124,24 @@ export function useDistrictSummary(params?: { sido?: string }) {
 }
 
 // ── 전국 통계 (top-complexes 완료 후 실행해 캐시 재사용) ──────────
-export function useNationalStats(options?: { enabled?: boolean; sido?: string }) {
+export function useNationalStats(options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['national-stats', options?.sido],
-    queryFn: () => api.getNationalStats({ sido: options?.sido }),
+    queryKey: ['national-stats'],
+    queryFn: () => api.getNationalStats(),
     staleTime: 1000 * 60 * 60,
     enabled: options?.enabled !== false,
-    // 30초 이상 걸리면 포기하고 재시도 (Vercel 30s limit 대응)
-    retry: 1,
-    retryDelay: 500,
   });
 }
 
 // ── 유틸: 실거래 차트 데이터 변환 ────────────────────────────────
 export function toChartData(transactions: RealTransaction[]) {
   return transactions
-    .sort((a, b) => a.dealDate.localeCompare(b.dealDate))
-    .map(t => ({
-      date: t.dealDate.slice(5), // "MM-DD"
-      price: t.price,
-      label: `${t.floor}층 ${formatPrice(t.price)}`,
-      floor: t.floor,
-      area: t.area,
-    }));
+      .sort((a, b) => a.dealDate.localeCompare(b.dealDate))
+      .map(t => ({
+        date: t.dealDate.slice(5), // "MM-DD"
+        price: t.price,
+        label: `${t.floor}층 ${formatPrice(t.price)}`,
+        floor: t.floor,
+        area: t.area,
+      }));
 }

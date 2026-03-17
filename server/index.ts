@@ -51,24 +51,22 @@ app.use('/api', (_req: Request, _res: Response, next: NextFunction) => {
 });
 
 // ── Cache warm-up (서울 25개 구) ─────────────────────────────────
-// 서버 시작 직후 서울 실거래 데이터를 백그라운드로 미리 수집.
-// top-complexes / national-stats와 동일한 키(tx:{code}:{month}:sale)로 저장
-// → 첫 요청 시 이미 캐시 히트, cold-start 지연 최소화
+// 서버 시작 직후 서울 실거래 데이터를 백그라운드로 미리 수집
 async function warmupSeoulCache() {
   const seoulDistricts = Object.entries(DISTRICT_CODES)
-    .filter(([name]) => name.startsWith('서울 '));
+      .filter(([name]) => name.startsWith('서울 '));
   const months = getRecentMonths(1);
-  const month = months[0];
 
-  console.log(`[Cache] 서울 ${seoulDistricts.length}개 구 워밍 시작 (${month})...`);
+  console.log(`[Cache] 서울 ${seoulDistricts.length}개 구 워밍 시작...`);
   let loaded = 0;
   await Promise.allSettled(
-    seoulDistricts.map(async ([, code]) => {
-      const key = `tx:${code}:${month}:sale`; // top-complexes/national-stats 공용 키
-      if (cache.get(key)) return; // 이미 캐시됨
-      const txs = await fetchTransactionRange(code, months, 'sale');
-      if (txs.length > 0) { cache.set(key, txs, TTL.TRANSACTION); loaded++; }
-    })
+      seoulDistricts.map(async ([, code]) => {
+        const key = `tx:${code}:${months.join('-')}:sale`;
+        if (cache.get(key)) return; // 이미 캐시됨
+        const txs = await fetchTransactionRange(code, months, 'sale');
+        if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
+        loaded++;
+      })
   );
   console.log(`[Cache] 워밍 완료 — ${loaded}개 구 로드`);
 }

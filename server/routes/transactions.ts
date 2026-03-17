@@ -45,7 +45,7 @@ router.get('/', async (req: Request, res: Response) => {
     // 단지명 필터
     if (complex) {
       transactions = transactions.filter(t =>
-        t.complexName.includes(complex)
+          t.complexName.includes(complex)
       );
     }
 
@@ -53,7 +53,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (area) {
       const areaNum = parseFloat(area);
       transactions = transactions.filter(t =>
-        Math.abs(t.area - areaNum) <= 10
+          Math.abs(t.area - areaNum) <= 10
       );
     }
 
@@ -110,17 +110,17 @@ router.get('/complex-stats', async (req: Request, res: Response) => {
 
     const minCountNum = parseInt(minCount, 10);
     const result = Array.from(stats.values())
-      .filter(s => s.transactions.length >= minCountNum)
-      .sort((a, b) => b.transactions.length - a.transactions.length)
-      .map(s => ({
-        complexName: s.complexName,
-        neighborhood: s.neighborhood,
-        avgPrice: s.avgPrice,
-        minPrice: s.minPrice,
-        maxPrice: s.maxPrice,
-        transactionCount: s.transactions.length,
-        recentTransactions: s.transactions.slice(0, 5),
-      }));
+        .filter(s => s.transactions.length >= minCountNum)
+        .sort((a, b) => b.transactions.length - a.transactions.length)
+        .map(s => ({
+          complexName: s.complexName,
+          neighborhood: s.neighborhood,
+          avgPrice: s.avgPrice,
+          minPrice: s.minPrice,
+          maxPrice: s.maxPrice,
+          transactionCount: s.transactions.length,
+          recentTransactions: s.transactions.slice(0, 5),
+        }));
 
     return res.json({ success: true, data: result });
   } catch (err) {
@@ -150,30 +150,23 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
 
     // sido 필터 적용 (미지정 시 전국)
     const districtEntries = sido
-      ? Object.entries(DISTRICT_CODES).filter(([name]) => name.startsWith(sido + ' '))
-      : Object.entries(DISTRICT_CODES);
+        ? Object.entries(DISTRICT_CODES).filter(([name]) => name.startsWith(sido + ' '))
+        : Object.entries(DISTRICT_CODES);
     const results = await Promise.allSettled(
-      districtEntries.map(async ([districtName, code]) => {
-        // 단일 월 키로 캐시 — national-stats와 키 형식 공유
-        const txKey = `tx:${code}:${monthList[0]}:sale`;
-        let txs: Transaction[] | undefined = cache.get<Transaction[]>(txKey);
-        if (txs === undefined) {
-          txs = await fetchTransactionRange(code, monthList, 'sale');
-          // 빈 배열도 캐시 (이번 달 신고 아직 없는 구 — 반복 요청 방지)
-          cache.set(txKey, txs, TTL.TRANSACTION);
-        }
-        const stats = aggregateByComplex(txs);
-        return Array.from(stats.values()).map(s => ({
-          complexName: s.complexName,
-          neighborhood: s.neighborhood,
-          district: districtName,
-          avgPrice: s.avgPrice,
-          minPrice: s.minPrice,
-          maxPrice: s.maxPrice,
-          transactionCount: s.transactions.length,
-          recentTransactions: s.transactions.slice(0, 3),
-        }));
-      })
+        districtEntries.map(async ([districtName, code]) => {
+          const txs = await fetchTransactionRange(code, monthList, 'sale');
+          const stats = aggregateByComplex(txs);
+          return Array.from(stats.values()).map(s => ({
+            complexName: s.complexName,
+            neighborhood: s.neighborhood,
+            district: districtName,
+            avgPrice: s.avgPrice,
+            minPrice: s.minPrice,
+            maxPrice: s.maxPrice,
+            transactionCount: s.transactions.length,
+            recentTransactions: s.transactions.slice(0, 3),
+          }));
+        })
     );
 
     type ComplexEntry = {
@@ -182,12 +175,12 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
       transactionCount: number; recentTransactions: Transaction[];
     };
     const allComplexes = (results
-      .filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<ComplexEntry[]>[])
-      .flatMap(r => r.value);
+        .filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<ComplexEntry[]>[])
+        .flatMap(r => r.value);
 
     const top = allComplexes
-      .sort((a, b) => b.maxPrice - a.maxPrice)
-      .slice(0, limitNum);
+        .sort((a, b) => b.maxPrice - a.maxPrice)
+        .slice(0, limitNum);
 
     if (top.length > 0) {
       cache.set(cacheKey, top, TTL.DISTRICT);
@@ -203,43 +196,33 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
 /**
  * GET /api/transactions/national-stats
  * 전국 실거래 요약 통계 (이번 달 기준)
- * top-complexes와 캐시 키를 공유 → sequential 실행 시 재사용으로 빠름
- *
- * Query params:
- *   sido - 시/도 필터 (예: '서울') — 미지정 시 전국
+ * 캐시된 데이터를 재사용하므로 top-complexes 후 빠름
  */
-router.get('/national-stats', async (req: Request, res: Response) => {
+router.get('/national-stats', async (_req: Request, res: Response) => {
   try {
-    const { sido } = req.query as Record<string, string>;
-
-    // top-complexes와 동일하게 1개월, 동일 캐시 키 형식 사용
-    const monthList = getRecentMonths(1);
-    const month = monthList[0];
-
-    const cacheKey = `national-stats:${sido ?? 'all'}:${month}`;
+    const cacheKey = 'national-stats:latest';
     const cached = cache.get<unknown>(cacheKey);
     if (cached) return res.json({ success: true, data: cached });
 
-    const districtEntries = sido
-      ? Object.entries(DISTRICT_CODES).filter(([name]) => name.startsWith(sido + ' '))
-      : Object.entries(DISTRICT_CODES);
+    // 이번 달 + 전달 조회 (이번 달 신고 누락 방지)
+    const monthList = getRecentMonths(2);
+    const districtEntries = Object.entries(DISTRICT_CODES);
 
     const results = await Promise.allSettled(
-      districtEntries.map(async ([districtName, code]) => {
-        // top-complexes가 이미 채운 캐시를 재사용 (서울 25개 구는 캐시 히트)
-        const txKey = `tx:${code}:${month}:sale`;
-        let txs: Transaction[] | undefined = cache.get<Transaction[]>(txKey);
-        if (txs === undefined) {
-          txs = await fetchTransactionRange(code, monthList, 'sale');
-          cache.set(txKey, txs, TTL.TRANSACTION); // 빈 배열도 캐시
-        }
-        return { district: districtName, count: txs.length, prices: txs.map(t => t.price) };
-      }),
+        districtEntries.map(async ([districtName, code]) => {
+          const txCacheKey = `tx:${code}:${monthList.join('-')}:sale`;
+          let txs = cache.get<Awaited<ReturnType<typeof fetchTransactionRange>>>(txCacheKey);
+          if (!txs) {
+            txs = await fetchTransactionRange(code, monthList, 'sale');
+            if (txs.length > 0) cache.set(txCacheKey, txs, TTL.TRANSACTION);
+          }
+          return { district: districtName, count: txs.length, prices: txs.map(t => t.price) };
+        }),
     );
 
     const byDistrict = results
-      .filter((r): r is PromiseFulfilledResult<{ district: string; count: number; prices: number[] }> => r.status === 'fulfilled')
-      .map(r => r.value);
+        .filter((r): r is PromiseFulfilledResult<{ district: string; count: number; prices: number[] }> => r.status === 'fulfilled')
+        .map(r => r.value);
 
     const totalCount = byDistrict.reduce((s, d) => s + d.count, 0);
     const allPrices = byDistrict.flatMap(d => d.prices);
@@ -254,8 +237,7 @@ router.get('/national-stats', async (req: Request, res: Response) => {
       topDistrict: topByVolume ? { district: topByVolume.district, count: topByVolume.count } : null,
     };
 
-    // 데이터 있으면 캐시 (이번 달 초는 0일 수 있으므로 0 케이스도 6시간 캐시)
-    cache.set(cacheKey, data, TTL.TRANSACTION);
+    if (totalCount > 0) cache.set(cacheKey, data, TTL.DISTRICT);
     return res.json({ success: true, data });
   } catch (err) {
     console.error('[/api/transactions/national-stats]', err);

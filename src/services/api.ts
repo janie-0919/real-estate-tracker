@@ -9,8 +9,8 @@ const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(
 
 class ApiError extends Error {
   constructor(
-    public status: number,
-    message: string,
+      public status: number,
+      message: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -186,21 +186,21 @@ export const api = {
     return request<DistrictSummary[]>('/listings/district-summary', params as Record<string, string>);
   },
 
-  /** 전국 실거래 요약 통계 (sido 미지정 시 전국) */
-  getNationalStats(params?: { sido?: string }) {
+  /** 전국 실거래 요약 통계 */
+  getNationalStats() {
     return request<{
       totalCount: number;
       avgPrice: number;
       maxPrice: number;
       topDistrict: { district: string; count: number } | null;
-    }>('/transactions/national-stats', params as Record<string, string>);
+    }>('/transactions/national-stats');
   },
 
   /** 최고가 단지 TOP N (sido 필터 지원) */
   getTopComplexes(params?: { months?: number; limit?: number; sido?: string }) {
     return request<(ComplexStat & { district: string })[]>(
-      '/transactions/top-complexes',
-      params as unknown as Record<string, string>,
+        '/transactions/top-complexes',
+        params as unknown as Record<string, string>,
     );
   },
 
@@ -275,8 +275,8 @@ export const api = {
    */
   getRebMarketOverview(params?: { months?: number }) {
     return request<{ district: string; stats: RebMarketStat[] }[]>(
-      '/reb/market/overview',
-      params as unknown as Record<string, string>,
+        '/reb/market/overview',
+        params as unknown as Record<string, string>,
     );
   },
 };
