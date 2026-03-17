@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { fetchSaleTransactions, fetchTransactionRange, aggregateByComplex, getRecentMonths } from '../services/rebTransactions.js';
-import { DISTRICT_CODES } from '../types.js';
+import { DISTRICT_CODES, type Transaction } from '../types.js';
 import { cache, TTL } from '../services/cache.js';
 
 const router = Router();
@@ -166,8 +166,13 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
       })
     );
 
-    const allComplexes = results
-      .filter((r): r is PromiseFulfilledResult<typeof r extends PromiseFulfilledResult<infer V> ? V : never> => r.status === 'fulfilled')
+    type ComplexEntry = {
+      complexName: string; neighborhood: string; district: string;
+      avgPrice: number; minPrice: number; maxPrice: number;
+      transactionCount: number; recentTransactions: Transaction[];
+    };
+    const allComplexes = (results
+      .filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<ComplexEntry[]>[])
       .flatMap(r => r.value);
 
     const top = allComplexes
@@ -190,7 +195,7 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
  * 전국 실거래 요약 통계 (이번 달 기준)
  * 캐시된 데이터를 재사용하므로 top-complexes 후 빠름
  */
-router.get('/national-stats', async (req: Request, res: Response) => {
+router.get('/national-stats', async (_req: Request, res: Response) => {
   try {
     const cacheKey = 'national-stats:latest';
     const cached = cache.get<unknown>(cacheKey);

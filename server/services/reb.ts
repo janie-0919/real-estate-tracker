@@ -192,7 +192,7 @@ export async function fetchMonthlyPriceIndex(
 
   return rows
     .filter(r => {
-      if (!r.DTA_VAL || r.DTA_VAL.trim() === '') return false;
+      if (!r.DTA_VAL || String(r.DTA_VAL).trim() === '') return false;
       if (regions && regions.length > 0) {
         return regions.some(region => r.ITM_NM.includes(region));
       }
@@ -201,7 +201,7 @@ export async function fetchMonthlyPriceIndex(
     .map(r => ({
       period: r.WRTTIME_IDTFR_ID,
       region: r.ITM_NM,
-      value: parseFloat(r.DTA_VAL),
+      value: parseFloat(String(r.DTA_VAL)),
     }))
     .sort((a, b) => a.period.localeCompare(b.period));
 }

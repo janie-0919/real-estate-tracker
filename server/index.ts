@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import cron from 'node-cron';
 import transactionRouter from './routes/transactions.js';
@@ -19,7 +19,7 @@ app.use(cors({
 app.use(express.json());
 
 // ── Request logger ────────────────────────────────────────────────
-app.use((req, _res, next) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
@@ -31,7 +31,7 @@ app.use('/api/price-index', priceIndexRouter);
 app.use('/api/reb/market', rebMarketRouter);
 
 // ── Health check ──────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     rebApiKey: process.env.REB_API_KEY ? '설정됨' : '❌ 미설정 - .env에 REB_API_KEY 추가 필요',
@@ -41,7 +41,7 @@ app.get('/health', (_req, res) => {
 });
 
 // ── API 키 확인 미들웨어 ──────────────────────────────────────────
-app.use('/api', (_req, _res, next) => {
+app.use('/api', (_req: Request, _res: Response, next: NextFunction) => {
   if (!process.env.REB_API_KEY) {
     console.warn('⚠️  REB_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.');
   }
