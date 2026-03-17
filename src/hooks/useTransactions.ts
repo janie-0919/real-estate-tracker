@@ -15,7 +15,8 @@ export function useRebMarket(params: {
     queryKey: ['reb-market', { region, ...rest }],
     queryFn: () => api.getRebMarket({ region: region!, ...rest }),
     enabled: enabled && !!region,
-    staleTime: 1000 * 60 * 60,  // 1시간 캐시
+    staleTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
     retry: 1,
   });
 }
@@ -36,6 +37,7 @@ export function useTransactions(params: {
   dealType?: 'sale' | 'lease' | 'all';
   complex?: string;
   area?: number;
+  limit?: number;
   enabled?: boolean;
 }) {
   const { enabled = true, ...queryParams } = params;
@@ -46,6 +48,7 @@ export function useTransactions(params: {
     queryFn: () => api.getTransactions(queryParams),
     enabled: enabled && hasLocation,
     staleTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
     retry: 1,
   });
 }
@@ -65,6 +68,8 @@ export function useComplexStats(params: {
     queryFn: () => api.getComplexStats(queryParams),
     enabled: enabled && hasLocation,
     staleTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
@@ -83,6 +88,8 @@ export function usePriceTrend(params: {
     queryFn: () => api.getPriceTrend(queryParams),
     enabled: enabled && hasLocation,
     staleTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
@@ -102,6 +109,8 @@ export function useDeviation(params: {
     queryFn: () => api.getDeviation(queryParams),
     enabled: enabled && isReady,
     staleTime: 1000 * 60 * 60 * 6,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
@@ -111,6 +120,8 @@ export function useTopComplexes(params?: { months?: number; limit?: number; sido
     queryKey: ['top-complexes', params],
     queryFn: () => api.getTopComplexes(params),
     staleTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
@@ -120,16 +131,19 @@ export function useDistrictSummary(params?: { sido?: string }) {
     queryKey: ['district-summary', params],
     queryFn: () => api.getDistrictSummary(params),
     staleTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
-// ── 전국 통계 (top-complexes 완료 후 실행해 캐시 재사용) ──────────
-export function useNationalStats(options?: { enabled?: boolean }) {
+// ── 전국 통계 ─────────────────────────────────────────────────────
+export function useNationalStats() {
   return useQuery({
     queryKey: ['national-stats'],
     queryFn: () => api.getNationalStats(),
     staleTime: 1000 * 60 * 60,
-    enabled: options?.enabled !== false,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
