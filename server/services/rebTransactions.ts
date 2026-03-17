@@ -27,20 +27,8 @@
  *   DEAL_YMD    - 계약월 (YYYYMM, 예: 202407)
  */
 import axios from 'axios';
-import xml2js from 'xml2js';
 import type { Transaction } from '../types.js';
 import { DISTRICT_NAME_BY_CODE } from '../types.js';
-
-const xmlParser = new xml2js.Parser({ explicitArray: false, trim: true });
-
-function parseXml<T>(xml: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    xmlParser.parseString(xml, (err: Error | null, result: unknown) => {
-      if (err) reject(err);
-      else resolve(result as T);
-    });
-  });
-}
 
 const BASE_URL = 'https://apis.data.go.kr/1613000';
 // data.go.kr 실거래 API 키 (Decoding 키) — R-ONE 통계 API 키(reb.or.kr)와 별개
