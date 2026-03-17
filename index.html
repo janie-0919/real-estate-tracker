@@ -10,22 +10,103 @@
     <meta name="author" content="Real Estate Tracker" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="부동산 트래커 | 매물 모니터링 & 가격 분석" />
-    <meta name="description" content="실거래가 기반 부동산 분석 플랫폼. 지역별 가격 변화, 상승 매물, 거래 흐름을 한눈에 확인하세요." />
     <meta name="keywords" content="부동산, 실거래가, 아파트 시세, 부동산 분석, 집값" />
     <meta property="og:url" content="https://real-estate-tracker-nine.vercel.app/" />
     <meta property="og:image" content="/og.png" />
-    <meta name="robots" content="index, follow" />
     <meta name="naver-site-verification" content="e9c4e1cef9ae66fecfc274780ad221a6bcb240f0" />
     <meta name="google-adsense-account" content="ca-pub-7028182304611815">
     <meta name="google-site-verification" content="JQcJffVRg5YTiGK-8fofAJQ3eEvviW6aMqZ6Xcek_Ss" />
     <title>부동산 트래커 | 매물 모니터링 & 가격 분석</title>
+    <style>
+      /* 정적 콘텐츠 스타일 — React 로드 전 크롤러/AdSense용 */
+      #static-content { font-family: -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; padding: 1rem; color: #111; }
+      #static-content header { display: flex; align-items: center; gap: 1.5rem; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb; margin-bottom: 1.5rem; }
+      #static-content header strong { font-size: 1.1rem; color: #1d4ed8; }
+      #static-content nav a { margin: 0 0.5rem; color: #374151; text-decoration: none; font-size: 0.9rem; }
+      #static-content h1 { font-size: 1.75rem; font-weight: 700; color: #1e3a8a; margin: 0 0 0.5rem; }
+      #static-content h2 { font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 0.5rem; border-left: 4px solid #3b82f6; padding-left: 0.75rem; }
+      #static-content p { color: #4b5563; line-height: 1.6; margin: 0 0 0.75rem; }
+      #static-content .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1rem 0; }
+      #static-content .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; }
+      #static-content .card .label { font-size: 0.8rem; color: #6b7280; }
+      #static-content .card .value { font-size: 1.1rem; font-weight: 700; color: #111827; margin: 0.25rem 0; }
+      #static-content table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+      #static-content th { text-align: left; padding: 0.5rem; background: #f3f4f6; color: #6b7280; font-weight: 600; }
+      #static-content td { padding: 0.5rem; border-bottom: 1px solid #f3f4f6; color: #374151; }
+    </style>
   </head>
   <body>
-    <div style="display:none">
-      부동산 실거래가 분석 플랫폼입니다.
-      서울 아파트 시세, 지역별 가격 변화, 거래 데이터를 제공합니다.
+    <!-- 정적 콘텐츠: JS 없이도 크롤러/AdSense가 읽을 수 있는 페이지 구조 -->
+    <!-- React 앱 로드 후 #root로 교체됨 -->
+    <div id="static-content">
+      <header>
+        <strong>🏠 부동산 트래커</strong>
+        <nav>
+          <a href="/">홈</a>
+          <a href="/listings">매물 목록</a>
+          <a href="/favorites">관심 목록</a>
+          <a href="/alerts">알림 설정</a>
+        </nav>
+      </header>
+
+      <h1>부동산 매물을 스마트하게 모니터링하세요</h1>
+      <p>실시간 가격 변동 추적 · 실거래가 비교 · 급매 탐지 · 맞춤 알림<br>
+        국토교통부 실거래 공공데이터를 기반으로 서울 및 전국 아파트 시세를 제공합니다.</p>
+
+      <h2>이번달 주요 통계</h2>
+      <div class="grid">
+        <div class="card"><div class="label">이번달 서울 실거래</div><div class="value">서울 아파트 매매</div><div class="label">국토부 실거래 데이터</div></div>
+        <div class="card"><div class="label">이번달 전국 실거래</div><div class="value">전국 시군구 집계</div><div class="label">전국 시군구 집계</div></div>
+        <div class="card"><div class="label">서울 평균 실거래가</div><div class="value">서울 아파트 평균</div><div class="label">매매 기준 최근 1개월</div></div>
+        <div class="card"><div class="label">전국 평균 실거래가</div><div class="value">전국 아파트 평균</div><div class="label">매매 기준 최근 1개월</div></div>
+      </div>
+
+      <h2>서울 지역별 실거래 현황</h2>
+      <p>서울 25개 구의 아파트 실거래가 및 거래량 현황입니다.</p>
+      <table>
+        <thead><tr><th>지역</th><th>거래 건수</th><th>평균 실거래가</th><th>최저가</th><th>최고가</th></tr></thead>
+        <tbody>
+          <tr><td>서울 강남구</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td>서울 서초구</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td>서울 마포구</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td>서울 용산구</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td>서울 성동구</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        </tbody>
+      </table>
+
+      <h2>최고가 실거래 단지 TOP 4</h2>
+      <p>서울 전체에서 최근 1개월 기준 최고 실거래가를 기록한 아파트 단지입니다.</p>
+
+      <h2>강남구 최근 실거래</h2>
+      <p>서울 강남구 아파트 최근 실거래 내역입니다. 단지명, 전용면적, 층, 거래금액을 확인하세요.</p>
+
+      <h2>마포구 최근 실거래</h2>
+      <p>서울 마포구 아파트 최근 실거래 내역입니다.</p>
+
+      <h2>용산구 최근 실거래</h2>
+      <p>서울 용산구 아파트 최근 실거래 내역입니다.</p>
+
+      <h2>성동구 최근 실거래</h2>
+      <p>서울 성동구 아파트 최근 실거래 내역입니다.</p>
+
+      <p style="margin-top:2rem;font-size:0.8rem;color:#9ca3af;">
+        데이터 출처: 국토교통부 아파트 실거래가 공개시스템 | 서울 강남구 · 서초구 · 마포구 · 용산구 · 성동구 · 송파구 · 영등포구 · 노원구 아파트 매매 실거래 정보
+      </p>
     </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // React 마운트 후 정적 콘텐츠 숨김 (MutationObserver 사용)
+      var observer = new MutationObserver(function() {
+        var root = document.getElementById('root');
+        if (root && root.hasChildNodes()) {
+          var sc = document.getElementById('static-content');
+          if (sc) sc.style.display = 'none';
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.getElementById('root'), { childList: true });
+    </script>
   </body>
 </html>
