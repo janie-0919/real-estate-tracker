@@ -13,7 +13,10 @@
 
   a {
     color: $color-primary-600;
-    &:hover { text-decoration: underline; }
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   span:not([class]) {
@@ -64,9 +67,17 @@
   color: white;
 }
 
-.deal-sale { background: $color-primary-600; }
-.deal-lease { background: $color-success-600; }
-.deal-monthly { background: $color-warning-600; }
+.deal-sale {
+  background: $color-primary-600;
+}
+
+.deal-lease {
+  background: $color-success-600;
+}
+
+.deal-monthly {
+  background: $color-warning-600;
+}
 
 // Tabs
 .tabs {
@@ -85,7 +96,9 @@
   margin-bottom: -2px;
   transition: color $transition-fast, border-color $transition-fast;
 
-  &:hover { color: $color-text-primary; }
+  &:hover {
+    color: $color-text-primary;
+  }
 
   &.activeTab {
     color: $color-primary-600;
@@ -104,8 +117,14 @@
   @include flex(column, flex-start, stretch, $spacing-5);
 }
 
-.chartArea { @include flex(column, flex-start, stretch, $spacing-2); }
-.chartTitle { font-size: $font-size-base; font-weight: $font-weight-semibold; }
+.chartArea {
+  @include flex(column, flex-start, stretch, $spacing-2);
+}
+
+.chartTitle {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+}
 
 .historyTable, .compTable {
   width: 100%;
@@ -128,15 +147,38 @@
     color: $color-text-primary;
   }
 
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: $color-gray-50; }
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: $color-gray-50;
+  }
 }
 
-.priceCell { font-weight: $font-weight-semibold; }
-.noteCell { color: $color-text-secondary; font-size: $font-size-xs; }
-.up { color: $color-price-up; font-weight: $font-weight-semibold; }
-.down { color: $color-price-down; font-weight: $font-weight-semibold; }
-.highlight { color: $color-primary-700; font-weight: $font-weight-bold; }
+.priceCell {
+  font-weight: $font-weight-semibold;
+}
+
+.noteCell {
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+}
+
+.up {
+  color: $color-price-up;
+  font-weight: $font-weight-semibold;
+}
+
+.down {
+  color: $color-price-down;
+  font-weight: $font-weight-semibold;
+}
+
+.highlight {
+  color: $color-primary-700;
+  font-weight: $font-weight-bold;
+}
 
 .historyStats {
   display: grid;
@@ -154,8 +196,15 @@
   @include flex(column, flex-start, stretch, $spacing-1);
 }
 
-.statLabel { font-size: $font-size-xs; color: $color-text-secondary; }
-.statVal { font-size: $font-size-base; font-weight: $font-weight-bold; }
+.statLabel {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.statVal {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+}
 
 // Comparison
 .comparisonSummary {
@@ -174,10 +223,22 @@
   @include flex(column, flex-start, stretch, $spacing-1);
 }
 
-.emptyMsg { color: $color-text-secondary; font-size: $font-size-md; }
+.emptyMsg {
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+}
 
-.tableLink { color: $color-primary-600; &:hover { text-decoration: underline; } }
-.currentRow { background: $color-primary-50 !important; }
+.tableLink {
+  color: $color-primary-600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.currentRow {
+  background: $color-primary-50 !important;
+}
 
 .chartTitleRow {
   @include flex(row, space-between, center);
@@ -241,7 +302,9 @@
   position: relative;
   padding-bottom: $spacing-5;
 
-  &:last-child { padding-bottom: 0; }
+  &:last-child {
+    padding-bottom: 0;
+  }
 }
 
 .timelineDot {
@@ -269,9 +332,22 @@
   flex-wrap: wrap;
 }
 
-.timelineDate { font-size: $font-size-sm; color: $color-text-secondary; min-width: 80px; }
-.timelineNote { font-size: $font-size-sm; color: $color-text-primary; }
-.timelinePrice { font-size: $font-size-base; font-weight: $font-weight-bold; margin-left: auto; }
+.timelineDate {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  min-width: 80px;
+}
+
+.timelineNote {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.timelinePrice {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  margin-left: auto;
+}
 
 .warningFlags {
   @include flex(column, flex-start, stretch, $spacing-3);
@@ -282,7 +358,10 @@
   padding: $spacing-4;
   @include flex(row, flex-start, center, $spacing-3);
 
-  p { font-size: $font-size-sm; color: $color-text-secondary; }
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
 }
 
 // Sidebar
@@ -304,14 +383,38 @@
   @include flex(column, flex-start, stretch, $spacing-4);
 }
 
-.complexHeader { @include flex(column, flex-start, stretch, $spacing-1); }
-.complexName { font-size: $font-size-xl; font-weight: $font-weight-bold; }
-.address { font-size: $font-size-sm; color: $color-text-secondary; }
+.complexHeader {
+  @include flex(column, flex-start, stretch, $spacing-1);
+}
 
-.priceSection { @include flex(column, flex-start, stretch, $spacing-1); }
-.priceLabel { font-size: $font-size-sm; color: $color-text-secondary; }
-.priceMain { font-size: $font-size-2xl; font-weight: $font-weight-bold; color: $color-text-primary; }
-.priceChange { font-size: $font-size-sm; }
+.complexName {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+}
+
+.address {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.priceSection {
+  @include flex(column, flex-start, stretch, $spacing-1);
+}
+
+.priceLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.priceMain {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.priceChange {
+  font-size: $font-size-sm;
+}
 
 .deviationBar {
   @include flex(row, space-between, center);
@@ -321,7 +424,10 @@
   font-size: $font-size-md;
 }
 
-.deviationLabel { font-size: $font-size-sm; color: $color-text-secondary; }
+.deviationLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
 
 .detailGrid {
   display: grid;
@@ -333,7 +439,11 @@
   @include flex(column, flex-start, flex-start, $spacing-1);
 }
 
-.detailLabel { font-size: $font-size-xs; color: $color-text-secondary; font-weight: $font-weight-medium; }
+.detailLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
 
 .tags {
   @include flex(row, flex-start, center, $spacing-2);
@@ -347,10 +457,27 @@
   @include flex(column, flex-start, stretch, $spacing-1);
 }
 
-.agentTitle { font-size: $font-size-xs; color: $color-text-secondary; text-transform: uppercase; letter-spacing: 0.05em; }
-.agentName { font-size: $font-size-base; font-weight: $font-weight-semibold; }
-.agentAgency { font-size: $font-size-sm; color: $color-text-secondary; }
-.agentLicense { font-size: $font-size-xs; color: $color-text-secondary; }
+.agentTitle {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.agentName {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+}
+
+.agentAgency {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.agentLicense {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
 
 .actions {
   @include flex(column, flex-start, stretch, $spacing-2);
@@ -366,7 +493,9 @@
   border-radius: $radius-md;
   transition: background $transition-fast;
 
-  &:hover { background: $color-primary-50; }
+  &:hover {
+    background: $color-primary-50;
+  }
 }
 
 .metaInfo {

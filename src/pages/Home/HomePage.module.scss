@@ -207,8 +207,8 @@
 }
 
 .statLabel {
-  font-size: $font-size-sm;
-  color: $color-text-secondary;
+  font-size: $font-size-md;
+  color: $color-text-primary;
   margin-bottom: $spacing-2;
 
   @media (max-width: #{$bp-sm}) {

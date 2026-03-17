@@ -10,7 +10,14 @@
   @include flex(row, flex-start, center, $spacing-2);
   font-size: $font-size-sm;
   color: $color-text-secondary;
-  a { color: $color-primary-600; &:hover { text-decoration: underline; } }
+
+  a {
+    color: $color-primary-600;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 .header {
@@ -39,8 +46,12 @@
   grid-template-columns: repeat(6, 1fr);
   gap: $spacing-4;
 
-  @media (max-width: #{$bp-xl}) { grid-template-columns: repeat(3, 1fr); }
-  @media (max-width: #{$bp-sm}) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: #{$bp-xl}) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: #{$bp-sm}) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .statCard {
@@ -49,9 +60,19 @@
   @include flex(column, flex-start, stretch, $spacing-2);
 }
 
-.statLabel { font-size: $font-size-xs; color: $color-text-secondary; }
-.statValue { font-size: $font-size-lg; font-weight: $font-weight-bold; }
-.flash { color: $color-price-down; }
+.statLabel {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.statValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+}
+
+.flash {
+  color: $color-price-down;
+}
 
 .chartHeader {
   @include flex(row, space-between, center);
@@ -93,7 +114,9 @@
   grid-template-columns: 1fr 1fr;
   gap: $spacing-5;
 
-  @media (max-width: #{$bp-md}) { grid-template-columns: 1fr; }
+  @media (max-width: #{$bp-md}) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .chartCard {
@@ -143,19 +166,31 @@
     color: $color-text-primary;
   }
 
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: $color-gray-50; }
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: $color-gray-50;
+  }
 }
 
-.priceCell { font-weight: $font-weight-semibold; color: $color-text-primary; }
+.priceCell {
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
 
 .listingGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: $spacing-4;
 
-  @media (max-width: #{$bp-lg}) { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: #{$bp-sm}) { grid-template-columns: 1fr; }
+  @media (max-width: #{$bp-lg}) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: #{$bp-sm}) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .emptyMsg {
