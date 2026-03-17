@@ -152,41 +152,84 @@
 .flashIcon { font-size: $font-size-lg; }
 .newIcon { font-size: $font-size-base; }
 
-// Stat grid
+// Stat grid (8카드: 4열 × 2행)
 .statGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: $spacing-4;
+
+  @media (max-width: #{$bp-xl}) {
+    grid-template-columns: repeat(4, 1fr);
+  }
 
   @media (max-width: #{$bp-lg}) {
     grid-template-columns: repeat(2, 1fr);
   }
 
   @media (max-width: #{$bp-sm}) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-3;
   }
 }
 
 .statCard {
   @include card;
-  padding: $spacing-5;
+  padding: $spacing-4 $spacing-5;
+  border-top: 3px solid $color-primary-400;
+  transition: box-shadow $transition-fast, transform $transition-fast;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+}
+
+.statCardNational {
+  border-top-color: $color-success-500;
+}
+
+// 서울/전국 카테고리 배지
+.statCategory {
+  display: inline-block;
+  padding: 2px $spacing-2;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.04em;
+  border-radius: $radius-sm;
+  background: $color-primary-50;
+  color: $color-primary-700;
+  margin-bottom: $spacing-2;
+}
+
+.statCategoryNational {
+  background: $color-success-50;
+  color: $color-success-700;
 }
 
 .statLabel {
   font-size: $font-size-sm;
   color: $color-text-secondary;
   margin-bottom: $spacing-2;
+
+  @media (max-width: #{$bp-sm}) {
+    font-size: $font-size-xs;
+  }
 }
 
 .statValue {
-  font-size: $font-size-2xl;
+  font-size: $font-size-xl;
   font-weight: $font-weight-bold;
   color: $color-text-primary;
   margin-bottom: $spacing-1;
+
+  @media (max-width: #{$bp-sm}) {
+    font-size: $font-size-lg;
+  }
 }
 
 .statChange {
   font-size: $font-size-xs;
+  color: $color-text-secondary;
 
   &.positive { color: $color-price-up; }
   &.negative { color: $color-price-down; }

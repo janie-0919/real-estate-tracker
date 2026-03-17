@@ -186,6 +186,57 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/transactions/national-stats
+ * 전국 실거래 요약 통계 (이번 달 기준)
+ * 캐시된 데이터를 재사용하므로 top-complexes 후 빠름
+ */
+router.get('/national-stats', async (req: Request, res: Response) => {
+  try {
+    const cacheKey = 'national-stats:latest';
+    const cached = cache.get<unknown>(cacheKey);
+    if (cached) return res.json({ success: true, data: cached });
+
+    const monthList = getRecentMonths(1);
+    const districtEntries = Object.entries(DISTRICT_CODES);
+
+    const results = await Promise.allSettled(
+      districtEntries.map(async ([districtName, code]) => {
+        const txCacheKey = `tx:${code}:${monthList.join('-')}:sale`;
+        let txs = cache.get<Awaited<ReturnType<typeof fetchTransactionRange>>>(txCacheKey);
+        if (!txs) {
+          txs = await fetchTransactionRange(code, monthList, 'sale');
+          if (txs.length > 0) cache.set(txCacheKey, txs, TTL.TRANSACTION);
+        }
+        return { district: districtName, count: txs.length, prices: txs.map(t => t.price) };
+      }),
+    );
+
+    const byDistrict = results
+      .filter((r): r is PromiseFulfilledResult<{ district: string; count: number; prices: number[] }> => r.status === 'fulfilled')
+      .map(r => r.value);
+
+    const totalCount = byDistrict.reduce((s, d) => s + d.count, 0);
+    const allPrices = byDistrict.flatMap(d => d.prices);
+    const avgPrice = allPrices.length ? Math.round(allPrices.reduce((s, p) => s + p, 0) / allPrices.length) : 0;
+    const maxPrice = allPrices.length ? Math.max(...allPrices) : 0;
+    const topByVolume = byDistrict.filter(d => d.count > 0).sort((a, b) => b.count - a.count)[0] ?? null;
+
+    const data = {
+      totalCount,
+      avgPrice,
+      maxPrice,
+      topDistrict: topByVolume ? { district: topByVolume.district, count: topByVolume.count } : null,
+    };
+
+    if (totalCount > 0) cache.set(cacheKey, data, TTL.DISTRICT);
+    return res.json({ success: true, data });
+  } catch (err) {
+    console.error('[/api/transactions/national-stats]', err);
+    return res.status(500).json({ success: false, error: '전국 통계 조회 실패' });
+  }
+});
+
+/**
  * GET /api/transactions/price-trend
  * 지역 월별 평균 가격 추이
  */

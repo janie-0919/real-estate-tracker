@@ -115,11 +115,20 @@ export function useTopComplexes(params?: { months?: number; limit?: number }) {
 }
 
 // ── 지역 요약 ─────────────────────────────────────────────────────
-export function useDistrictSummary() {
+export function useDistrictSummary(params?: { sido?: string }) {
   return useQuery({
-    queryKey: ['district-summary'],
-    queryFn: () => api.getDistrictSummary(),
+    queryKey: ['district-summary', params],
+    queryFn: () => api.getDistrictSummary(params),
     staleTime: 1000 * 60 * 60 * 24,
+  });
+}
+
+// ── 전국 통계 ─────────────────────────────────────────────────────
+export function useNationalStats() {
+  return useQuery({
+    queryKey: ['national-stats'],
+    queryFn: () => api.getNationalStats(),
+    staleTime: 1000 * 60 * 60,
   });
 }
 

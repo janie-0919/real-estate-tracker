@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { parseSearchQuery, buildListingsUrl } from '@/utils/search';
-import { useDistrictSummary, useTopComplexes, useTransactions } from '@/hooks/useTransactions';
-import type { ComplexStat } from '@/services/api';
+import { useDistrictSummary, useNationalStats, useTopComplexes, useTransactions } from '@/hooks/useTransactions';
 import TransactionCard from '@/components/listings/TransactionCard';
 import { formatPrice } from '@/utils/format';
 import styles from './HomePage.module.scss';
@@ -14,10 +13,13 @@ export default function HomePage() {
   const [showAllRegions, setShowAllRegions] = useState(false);
   const navigate = useNavigate();
 
-  // 지역별 요약 (stat cards + region table)
-  const { data: districtSummary, isLoading: summaryLoading } = useDistrictSummary();
+  // 서울 지역별 요약 (stat cards + region table)
+  const { data: districtSummary, isLoading: summaryLoading } = useDistrictSummary({ sido: '서울' });
 
-  // 서울 전체 최고가 단지 (25개 구 통합)
+  // 전국 통계
+  const { data: nationalStats, isLoading: nationalLoading } = useNationalStats();
+
+  // 서울 전체 최고가 단지 (전국 25개 구 → 전국 250개 구 통합)
   const { data: topComplexes, isLoading: topStatsLoading } = useTopComplexes({ months: 1, limit: 4 });
 
   // 최근 실거래: 강남·마포·용산·성동
@@ -26,35 +28,65 @@ export default function HomePage() {
   const { data: yongsanTx,   isLoading: yongsanLoading }   = useTransactions({ district: '서울 용산구',  dealType: 'sale' });
   const { data: seongdongTx, isLoading: seongdongLoading } = useTransactions({ district: '서울 성동구',  dealType: 'sale' });
 
-  // stat cards
-  const totalTx = districtSummary?.reduce((sum, d) => sum + d.count, 0) ?? 0;
-  const districtsWithData = districtSummary?.filter(d => d.avgPrice > 0) ?? [];
-  const overallAvgPrice = districtsWithData.length > 0
-    ? Math.round(districtsWithData.reduce((sum, d) => sum + d.avgPrice, 0) / districtsWithData.length)
+  // ── 서울 통계 계산 ──
+  const seoulTotalTx = districtSummary?.reduce((sum, d) => sum + d.count, 0) ?? 0;
+  const seoulDistrictsWithData = districtSummary?.filter(d => d.avgPrice > 0) ?? [];
+  const seoulAvgPrice = seoulDistrictsWithData.length > 0
+    ? Math.round(seoulDistrictsWithData.reduce((sum, d) => sum + d.avgPrice, 0) / seoulDistrictsWithData.length)
     : 0;
-  const overallMaxPrice = districtSummary ? Math.max(...districtSummary.map(d => d.maxPrice)) : 0;
-  const topDistrict = districtSummary?.slice().sort((a, b) => b.count - a.count)[0];
+  const seoulMaxPrice = districtSummary?.length ? Math.max(...districtSummary.map(d => d.maxPrice)) : 0;
+  const seoulTopDistrict = districtSummary?.slice().sort((a, b) => b.count - a.count)[0];
+  const seoulCheapestDistrict = seoulDistrictsWithData.slice().sort((a, b) => a.avgPrice - b.avgPrice)[0];
 
-  const STAT_CARDS = [
+  // ── 8개 통계 카드 ──
+  const STAT_CARDS: { label: string; value: string; sub: string; category: 'seoul' | 'national' }[] = [
     {
+      category: 'seoul',
       label: '이번달 서울 실거래',
-      value: summaryLoading ? '...' : `${totalTx.toLocaleString()}건`,
+      value: summaryLoading ? '...' : `${seoulTotalTx.toLocaleString()}건`,
       sub: '국토부 실거래 데이터',
     },
     {
+      category: 'national',
+      label: '이번달 전국 실거래',
+      value: nationalLoading ? '...' : (nationalStats ? `${nationalStats.totalCount.toLocaleString()}건` : '-'),
+      sub: '전국 시군구 집계',
+    },
+    {
+      category: 'seoul',
       label: '서울 평균 실거래가',
-      value: summaryLoading ? '...' : (overallAvgPrice > 0 ? formatPrice(overallAvgPrice) : '-'),
+      value: summaryLoading ? '...' : (seoulAvgPrice > 0 ? formatPrice(seoulAvgPrice) : '-'),
       sub: '매매 기준 (최근 1개월)',
     },
     {
-      label: '최고 실거래가',
-      value: summaryLoading ? '...' : (overallMaxPrice > 0 ? formatPrice(overallMaxPrice) : '-'),
+      category: 'national',
+      label: '전국 평균 실거래가',
+      value: nationalLoading ? '...' : (nationalStats?.avgPrice ? formatPrice(nationalStats.avgPrice) : '-'),
+      sub: '매매 기준 (최근 1개월)',
+    },
+    {
+      category: 'seoul',
+      label: '서울 최고 실거래가',
+      value: summaryLoading ? '...' : (seoulMaxPrice > 0 ? formatPrice(seoulMaxPrice) : '-'),
       sub: '서울 전체 단지 기준',
     },
     {
-      label: '거래 활발 지역',
-      value: summaryLoading ? '...' : (topDistrict ? topDistrict.district.replace('서울 ', '') : '-'),
-      sub: topDistrict ? `${topDistrict.count}건 거래` : '집계 중',
+      category: 'national',
+      label: '전국 최고 실거래가',
+      value: nationalLoading ? '...' : (nationalStats?.maxPrice ? formatPrice(nationalStats.maxPrice) : '-'),
+      sub: '전국 시군구 기준',
+    },
+    {
+      category: 'seoul',
+      label: '서울 거래 활발 지역',
+      value: summaryLoading ? '...' : (seoulTopDistrict ? seoulTopDistrict.district.replace('서울 ', '') : '-'),
+      sub: seoulTopDistrict ? `${seoulTopDistrict.count}건 거래` : '집계 중',
+    },
+    {
+      category: 'national',
+      label: '전국 거래 활발 지역',
+      value: nationalLoading ? '...' : (nationalStats?.topDistrict?.district ?? '-'),
+      sub: nationalStats?.topDistrict ? `${nationalStats.topDistrict.count}건 거래` : '집계 중',
     },
   ];
 
@@ -110,7 +142,10 @@ export default function HomePage() {
       <section className={styles.section}>
         <div className={styles.statGrid}>
           {STAT_CARDS.map(stat => (
-            <div key={stat.label} className={styles.statCard}>
+            <div key={stat.label} className={`${styles.statCard} ${stat.category === 'national' ? styles.statCardNational : ''}`}>
+              <span className={`${styles.statCategory} ${stat.category === 'national' ? styles.statCategoryNational : ''}`}>
+                {stat.category === 'national' ? '전국' : '서울'}
+              </span>
               <p className={styles.statLabel}>{stat.label}</p>
               <p className={styles.statValue}>{stat.value}</p>
               <p className={styles.statChange}>{stat.sub}</p>

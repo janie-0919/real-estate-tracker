@@ -78,7 +78,11 @@ router.get('/deviation', async (req: Request, res: Response) => {
  */
 router.get('/district-summary', async (req: Request, res: Response) => {
   try {
-    const districts = Object.keys(DISTRICT_CODES);
+    const { sido } = req.query as Record<string, string>;
+    // sido 미지정 시 서울만 조회 (전국 250개 조회는 /transactions/national-stats 사용)
+    const allDistricts = Object.keys(DISTRICT_CODES);
+    const prefix = sido ? (sido + ' ') : '서울 ';
+    const districts = allDistricts.filter(d => d.startsWith(prefix));
     const recentMonths = getRecentMonths(1); // 직전 달
 
     const summaries = await Promise.allSettled(

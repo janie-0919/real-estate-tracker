@@ -181,9 +181,19 @@ export const api = {
     return request<DeviationResult>('/listings/deviation', params as unknown as Record<string, string>);
   },
 
-  /** 지역별 요약 통계 */
-  getDistrictSummary() {
-    return request<DistrictSummary[]>('/listings/district-summary');
+  /** 지역별 요약 통계 (sido 미지정 시 서울) */
+  getDistrictSummary(params?: { sido?: string }) {
+    return request<DistrictSummary[]>('/listings/district-summary', params as Record<string, string>);
+  },
+
+  /** 전국 실거래 요약 통계 */
+  getNationalStats() {
+    return request<{
+      totalCount: number;
+      avgPrice: number;
+      maxPrice: number;
+      topDistrict: { district: string; count: number } | null;
+    }>('/transactions/national-stats');
   },
 
   /** 서울 전체 최고가 단지 TOP N */
