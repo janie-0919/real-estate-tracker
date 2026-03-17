@@ -186,14 +186,14 @@ export const api = {
     return request<DistrictSummary[]>('/listings/district-summary', params as Record<string, string>);
   },
 
-  /** 전국 실거래 요약 통계 */
-  getNationalStats() {
+  /** 전국 실거래 요약 통계 (sido 미지정 시 전국) */
+  getNationalStats(params?: { sido?: string }) {
     return request<{
       totalCount: number;
       avgPrice: number;
       maxPrice: number;
       topDistrict: { district: string; count: number } | null;
-    }>('/transactions/national-stats');
+    }>('/transactions/national-stats', params as Record<string, string>);
   },
 
   /** 최고가 단지 TOP N (sido 필터 지원) */

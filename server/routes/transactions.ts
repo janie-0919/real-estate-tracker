@@ -154,7 +154,14 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
       : Object.entries(DISTRICT_CODES);
     const results = await Promise.allSettled(
       districtEntries.map(async ([districtName, code]) => {
-        const txs = await fetchTransactionRange(code, monthList, 'sale');
+        // 단일 월 키로 캐시 — national-stats와 키 형식 공유
+        const txKey = `tx:${code}:${monthList[0]}:sale`;
+        let txs: Transaction[] | undefined = cache.get<Transaction[]>(txKey);
+        if (txs === undefined) {
+          txs = await fetchTransactionRange(code, monthList, 'sale');
+          // 빈 배열도 캐시 (이번 달 신고 아직 없는 구 — 반복 요청 방지)
+          cache.set(txKey, txs, TTL.TRANSACTION);
+        }
         const stats = aggregateByComplex(txs);
         return Array.from(stats.values()).map(s => ({
           complexName: s.complexName,
@@ -196,25 +203,35 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
 /**
  * GET /api/transactions/national-stats
  * 전국 실거래 요약 통계 (이번 달 기준)
- * 캐시된 데이터를 재사용하므로 top-complexes 후 빠름
+ * top-complexes와 캐시 키를 공유 → sequential 실행 시 재사용으로 빠름
+ *
+ * Query params:
+ *   sido - 시/도 필터 (예: '서울') — 미지정 시 전국
  */
-router.get('/national-stats', async (_req: Request, res: Response) => {
+router.get('/national-stats', async (req: Request, res: Response) => {
   try {
-    const cacheKey = 'national-stats:latest';
+    const { sido } = req.query as Record<string, string>;
+
+    // top-complexes와 동일하게 1개월, 동일 캐시 키 형식 사용
+    const monthList = getRecentMonths(1);
+    const month = monthList[0];
+
+    const cacheKey = `national-stats:${sido ?? 'all'}:${month}`;
     const cached = cache.get<unknown>(cacheKey);
     if (cached) return res.json({ success: true, data: cached });
 
-    // 이번 달 + 전달 조회 (이번 달 신고 누락 방지)
-    const monthList = getRecentMonths(2);
-    const districtEntries = Object.entries(DISTRICT_CODES);
+    const districtEntries = sido
+      ? Object.entries(DISTRICT_CODES).filter(([name]) => name.startsWith(sido + ' '))
+      : Object.entries(DISTRICT_CODES);
 
     const results = await Promise.allSettled(
       districtEntries.map(async ([districtName, code]) => {
-        const txCacheKey = `tx:${code}:${monthList.join('-')}:sale`;
-        let txs = cache.get<Awaited<ReturnType<typeof fetchTransactionRange>>>(txCacheKey);
-        if (!txs) {
+        // top-complexes가 이미 채운 캐시를 재사용 (서울 25개 구는 캐시 히트)
+        const txKey = `tx:${code}:${month}:sale`;
+        let txs: Transaction[] | undefined = cache.get<Transaction[]>(txKey);
+        if (txs === undefined) {
           txs = await fetchTransactionRange(code, monthList, 'sale');
-          if (txs.length > 0) cache.set(txCacheKey, txs, TTL.TRANSACTION);
+          cache.set(txKey, txs, TTL.TRANSACTION); // 빈 배열도 캐시
         }
         return { district: districtName, count: txs.length, prices: txs.map(t => t.price) };
       }),
@@ -237,7 +254,8 @@ router.get('/national-stats', async (_req: Request, res: Response) => {
       topDistrict: topByVolume ? { district: topByVolume.district, count: topByVolume.count } : null,
     };
 
-    if (totalCount > 0) cache.set(cacheKey, data, TTL.DISTRICT);
+    // 데이터 있으면 캐시 (이번 달 초는 0일 수 있으므로 0 케이스도 6시간 캐시)
+    cache.set(cacheKey, data, TTL.TRANSACTION);
     return res.json({ success: true, data });
   } catch (err) {
     console.error('[/api/transactions/national-stats]', err);
