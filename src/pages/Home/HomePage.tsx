@@ -26,7 +26,6 @@ export default function HomePage() {
   const { data: gangnamTx,   isLoading: gangnamLoading }   = useTransactions({ district: '서울 강남구',  dealType: 'sale' });
   const { data: mapoTx,      isLoading: mapoLoading }      = useTransactions({ district: '서울 마포구',  dealType: 'sale' });
   const { data: yongsanTx,   isLoading: yongsanLoading }   = useTransactions({ district: '서울 용산구',  dealType: 'sale' });
-  const { data: seongdongTx, isLoading: seongdongLoading } = useTransactions({ district: '서울 성동구',  dealType: 'sale' });
 
   // ── 서울 통계 계산 ──
   const seoulTotalTx = districtSummary?.reduce((sum, d) => sum + d.count, 0) ?? 0;
