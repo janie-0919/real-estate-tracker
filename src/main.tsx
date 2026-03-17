@@ -14,12 +14,28 @@ const queryClient = new QueryClient({
   },
 });
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </QueryClientProvider>
-  </React.StrictMode>,
-);
+const rootEl = document.getElementById('root')!;
+
+// react-snap이 pre-render한 페이지는 hydrate, 일반 SPA는 createRoot
+if (rootEl.hasChildNodes()) {
+  ReactDOM.hydrateRoot(
+    rootEl,
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </QueryClientProvider>
+    </React.StrictMode>,
+  );
+} else {
+  ReactDOM.createRoot(rootEl).render(
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </QueryClientProvider>
+    </React.StrictMode>,
+  );
+}
