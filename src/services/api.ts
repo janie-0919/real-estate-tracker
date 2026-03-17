@@ -196,8 +196,8 @@ export const api = {
     }>('/transactions/national-stats');
   },
 
-  /** 서울 전체 최고가 단지 TOP N */
-  getTopComplexes(params?: { months?: number; limit?: number }) {
+  /** 최고가 단지 TOP N (sido 필터 지원) */
+  getTopComplexes(params?: { months?: number; limit?: number; sido?: string }) {
     return request<(ComplexStat & { district: string })[]>(
       '/transactions/top-complexes',
       params as unknown as Record<string, string>,

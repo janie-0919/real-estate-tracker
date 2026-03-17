@@ -16,11 +16,11 @@ export default function HomePage() {
   // 서울 지역별 요약 (stat cards + region table)
   const { data: districtSummary, isLoading: summaryLoading } = useDistrictSummary({ sido: '서울' });
 
-  // 전국 통계
-  const { data: nationalStats, isLoading: nationalLoading } = useNationalStats();
+  // 서울 최고가 단지 (sido=서울 → 25개 구만 조회)
+  const { data: topComplexes, isLoading: topStatsLoading } = useTopComplexes({ months: 1, limit: 4, sido: '서울' });
 
-  // 서울 전체 최고가 단지 (전국 25개 구 → 전국 250개 구 통합)
-  const { data: topComplexes, isLoading: topStatsLoading } = useTopComplexes({ months: 1, limit: 4 });
+  // 전국 통계 — top-complexes 완료 후 실행 (서버 캐시 재사용으로 빠름)
+  const { data: nationalStats, isLoading: nationalLoading } = useNationalStats({ enabled: !topStatsLoading });
 
   // 최근 실거래: 강남·마포·용산·성동
   const { data: gangnamTx,   isLoading: gangnamLoading }   = useTransactions({ district: '서울 강남구',  dealType: 'sale' });

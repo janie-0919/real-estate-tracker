@@ -105,8 +105,8 @@ export function useDeviation(params: {
   });
 }
 
-// ── 서울 전체 최고가 단지 ─────────────────────────────────────────
-export function useTopComplexes(params?: { months?: number; limit?: number }) {
+// ── 최고가 단지 (sido 필터 지원) ─────────────────────────────────
+export function useTopComplexes(params?: { months?: number; limit?: number; sido?: string }) {
   return useQuery({
     queryKey: ['top-complexes', params],
     queryFn: () => api.getTopComplexes(params),
@@ -123,12 +123,13 @@ export function useDistrictSummary(params?: { sido?: string }) {
   });
 }
 
-// ── 전국 통계 ─────────────────────────────────────────────────────
-export function useNationalStats() {
+// ── 전국 통계 (top-complexes 완료 후 실행해 캐시 재사용) ──────────
+export function useNationalStats(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['national-stats'],
     queryFn: () => api.getNationalStats(),
     staleTime: 1000 * 60 * 60,
+    enabled: options?.enabled !== false,
   });
 }
 

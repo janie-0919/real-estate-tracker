@@ -131,24 +131,27 @@ router.get('/complex-stats', async (req: Request, res: Response) => {
 
 /**
  * GET /api/transactions/top-complexes
- * 서울 전체(25개 구) 최고가 단지 TOP N
+ * 최고가 단지 TOP N
  *
  * Query params:
  *   months - 조회 개월수 (기본 1)
  *   limit  - 반환 단지 수 (기본 4)
+ *   sido   - 시/도 필터 (예: '서울') — 미지정 시 전국
  */
 router.get('/top-complexes', async (req: Request, res: Response) => {
   try {
-    const { months = '1', limit = '4' } = req.query as Record<string, string>;
+    const { months = '1', limit = '4', sido } = req.query as Record<string, string>;
     const monthList = getRecentMonths(parseInt(months, 10));
     const limitNum = parseInt(limit, 10);
 
-    const cacheKey = `top-complexes:${monthList.join('-')}:${limitNum}`;
+    const cacheKey = `top-complexes:${sido ?? 'all'}:${monthList.join('-')}:${limitNum}`;
     const cached = cache.get<unknown[]>(cacheKey);
     if (cached) return res.json({ success: true, data: cached });
 
-    // 25개 구 병렬 fetch
-    const districtEntries = Object.entries(DISTRICT_CODES);
+    // sido 필터 적용 (미지정 시 전국)
+    const districtEntries = sido
+      ? Object.entries(DISTRICT_CODES).filter(([name]) => name.startsWith(sido + ' '))
+      : Object.entries(DISTRICT_CODES);
     const results = await Promise.allSettled(
       districtEntries.map(async ([districtName, code]) => {
         const txs = await fetchTransactionRange(code, monthList, 'sale');
