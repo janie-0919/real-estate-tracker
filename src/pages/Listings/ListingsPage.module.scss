@@ -406,6 +406,48 @@
   color: $color-primary-700;
 }
 
+// ── 시/도 탭 ──────────────────────────────────────────────────────
+.sidoTabList {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: $spacing-1;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding-bottom: $spacing-1;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.sidoTab {
+  @include button-reset;
+  padding: $spacing-2 $spacing-4;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  border: 1.5px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-bg-surface;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-primary-300;
+    color: $color-primary-700;
+    background: $color-primary-50;
+  }
+}
+
+.sidoTabActive {
+  border-color: $color-primary-600 !important;
+  background: $color-primary-600 !important;
+  color: white !important;
+  font-weight: $font-weight-semibold !important;
+}
+
 // District picker (no district selected)
 .districtPickerSection {
   @include flex(column, flex-start, stretch, $spacing-5);

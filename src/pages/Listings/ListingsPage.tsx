@@ -4,7 +4,7 @@ import type { FilterState } from '@/types';
 import { formatPrice, formatDate, formatDealType } from '@/utils/format';
 import { useTransactions, useRebMarket } from '@/hooks/useTransactions';
 import type { RealTransaction } from '@/services/api';
-import { SEOUL_DISTRICT_CODE_MAP, SEOUL_DISTRICT_GROUPS } from '@/data/districts';
+import { ALL_REGIONS, ALL_DISTRICT_CODE_MAP, SEOUL_DISTRICT_GROUPS } from '@/data/districts';
 import RebMarketSection from '@/components/listings/RebMarketSection';
 import TransactionCard from '@/components/listings/TransactionCard';
 import ListingFilter from '@/components/listings/ListingFilter';
@@ -130,14 +130,14 @@ export default function ListingsPage() {
   const [searchInput, setSearchInput] = useState(urlQuery);
   const [sortField, setSortField] = useState<TxSortField>('dealDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  // 모바일에서는 카드 뷰를 기본값으로
   const [viewMode, setViewMode] = useState<'card' | 'table'>(
     () => (typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT ? 'card' : 'table'),
   );
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 화면 크기 변경에 따라 뷰 모드 자동 전환
-  // 모바일(< 768px): 카드 / 데스크톱(>= 768px): 테이블
+  // 지역 피커: 선택된 시/도 (기본 서울)
+  const [pickerSido, setPickerSido] = useState('서울');
+
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
     const handler = (e: MediaQueryListEvent) => {
@@ -158,8 +158,10 @@ export default function ListingsPage() {
   }, [urlQuery]);
 
   const selectedDistrict = filter.districts.length === 1 ? filter.districts[0] : undefined;
-  const districtCode = selectedDistrict ? SEOUL_DISTRICT_CODE_MAP[selectedDistrict] : undefined;
-  const guName = selectedDistrict?.replace('서울 ', '');
+  const districtCode = selectedDistrict ? ALL_DISTRICT_CODE_MAP[selectedDistrict] : undefined;
+
+  // REB 마켓은 서울·광역시 단위 지역명만 지원 — 첫 번째 단어(시/도 접두어)를 제거
+  const guName = selectedDistrict?.replace(/^[가-힣]+ /, '');
 
   const { data: transactions, isLoading: txLoading, isError: txError } = useTransactions({
     district: selectedDistrict,
@@ -215,12 +217,15 @@ export default function ListingsPage() {
     filter.floorMin, filter.floorMax,
   ].filter(v => v !== undefined).length;
 
+  // 현재 피커에서 선택된 시/도 데이터
+  const currentSidoRegion = ALL_REGIONS.find(r => r.sido === pickerSido);
+
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>
-            {selectedDistrict ? `${selectedDistrict} 실거래` : '서울 실거래 내역'}
+            {selectedDistrict ? `${selectedDistrict} 실거래` : '전국 실거래 내역'}
           </h1>
           {selectedDistrict && (
             <p className={styles.titleSub}>최근 6개월 국토교통부 실거래 신고 자료</p>
@@ -271,8 +276,10 @@ export default function ListingsPage() {
         onReset={() => { setFilter(DEFAULT_FILTER); setCurrentPage(1); }}
       />
 
+      {/* ── 지역 선택 피커 (지역 미선택 시) ── */}
       {!selectedDistrict && (
         <div className={styles.districtPickerSection}>
+          {/* 안내 헤더 */}
           <div className={styles.districtPickerHeader}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
@@ -284,24 +291,59 @@ export default function ListingsPage() {
               <span>조회할 지역을 선택하세요 · 최근 6개월 실거래 데이터를 불러옵니다</span>
             )}
           </div>
-          <div className={styles.districtGroupList}>
-            {SEOUL_DISTRICT_GROUPS.map(group => (
-              <div key={group.label} className={styles.districtGroup}>
-                <span className={styles.districtGroupLabel}>{group.label}</span>
+
+          {/* 시/도 탭 */}
+          <div className={styles.sidoTabList}>
+            {ALL_REGIONS.map(region => (
+              <button
+                key={region.sido}
+                className={`${styles.sidoTab} ${pickerSido === region.sido ? styles.sidoTabActive : ''}`}
+                onClick={() => setPickerSido(region.sido)}
+              >
+                {region.sido}
+              </button>
+            ))}
+          </div>
+
+          {/* 선택된 시/도의 구/시/군 목록 */}
+          {currentSidoRegion && (
+            <>
+              {/* 서울은 권역별 그룹핑 */}
+              {pickerSido === '서울' ? (
+                <div className={styles.districtGroupList}>
+                  {SEOUL_DISTRICT_GROUPS.map(group => (
+                    <div key={group.label} className={styles.districtGroup}>
+                      <span className={styles.districtGroupLabel}>{group.label}</span>
+                      <div className={styles.districtGrid}>
+                        {group.districts.map(name => (
+                          <Link
+                            key={name}
+                            to={`/listings?district=${encodeURIComponent(name)}${urlQuery ? `&q=${encodeURIComponent(urlQuery)}` : ''}`}
+                            className={styles.districtBtn}
+                          >
+                            {name.replace('서울 ', '')}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* 그 외 시/도: 플랫 그리드 */
                 <div className={styles.districtGrid}>
-                  {group.districts.map(name => (
+                  {currentSidoRegion.districts.map(d => (
                     <Link
-                      key={name}
-                      to={`/listings?district=${encodeURIComponent(name)}${urlQuery ? `&q=${encodeURIComponent(urlQuery)}` : ''}`}
+                      key={d.name}
+                      to={`/listings?district=${encodeURIComponent(d.name)}${urlQuery ? `&q=${encodeURIComponent(urlQuery)}` : ''}`}
                       className={styles.districtBtn}
                     >
-                      {name.replace('서울 ', '')}
+                      {d.name.replace(`${currentSidoRegion.sido} `, '')}
                     </Link>
                   ))}
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -323,7 +365,6 @@ export default function ListingsPage() {
               <span className={styles.filterBadge}>{activeFilterCount}개 필터 적용 중</span>
             )}
           </div>
-          {/* 모바일에서는 뷰 전환 버튼 숨김 */}
           <div className={styles.viewToggle}>
             <button
               className={`${styles.viewBtn} ${viewMode === 'card' ? styles.active : ''}`}
