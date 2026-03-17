@@ -46,3 +46,22 @@ export const TTL = {
   LISTING:     1000 * 60 * 30,         // 매물목록: 30분
   DISTRICT:    1000 * 60 * 60 * 24,   // 지역통계: 24시간
 } as const;
+
+/**
+ * 공유 캐시 키 생성 — 프로젝트 전체에서 동일한 키를 사용해 중복 API 호출 방지
+ *
+ * @param code       시군구코드 (예: '11680')
+ * @param yearMonth  조회 연월 (예: '202501')
+ * @param dealType   거래유형 ('sale' | 'lease' | 'all')
+ */
+export function txCacheKey(code: string, yearMonth: string, dealType: 'sale' | 'lease' | 'all'): string {
+  return `tx:${code}:${yearMonth}:${dealType}`;
+}
+
+/**
+ * 여러 달에 걸친 캐시 키 (범위 쿼리 식별용)
+ * — /transactions 라우터처럼 months 배열을 한 키로 묶을 때 사용
+ */
+export function txRangeCacheKey(code: string, months: string[], dealType: 'sale' | 'lease' | 'all'): string {
+  return `tx:${code}:${months.join('-')}:${dealType}`;
+}

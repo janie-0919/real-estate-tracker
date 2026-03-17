@@ -308,6 +308,36 @@
 .up { color: $color-price-up; font-weight: $font-weight-semibold; }
 .down { color: $color-price-down; font-weight: $font-weight-semibold; }
 
+// ── Skeleton 로딩 UI ─────────────────────────────────────────────
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+%skeleton-base {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: $radius-md;
+}
+
+.skeletonCard {
+  @extend %skeleton-base;
+  height: 130px;
+  border-radius: $radius-lg;
+}
+
+.skeletonRow {
+  td { padding: 0; border: none !important; }
+}
+
+.skeletonLine {
+  @extend %skeleton-base;
+  height: 20px;
+  margin: $spacing-3 $spacing-4;
+  border-radius: $radius-sm;
+}
+
 // Listing grid
 .listingGrid {
   display: grid;

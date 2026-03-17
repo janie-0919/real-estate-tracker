@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { fetchSaleTransactions, fetchTransactionRange, aggregateByComplex, getRecentMonths } from '../services/rebTransactions.js';
 import { DISTRICT_CODES, type Transaction } from '../types.js';
-import { cache, TTL } from '../services/cache.js';
+import { cache, TTL, txCacheKey, txRangeCacheKey } from '../services/cache.js';
 
 const router = Router();
 
@@ -9,9 +9,11 @@ const router = Router();
  * GET /api/transactions
  * 실거래가 조회
  *
+ * ✅ 최적화: 월별 캐시 키(txCacheKey)를 사용해 다른 엔드포인트와 캐시 공유
+ *
  * Query params:
  *   district   - 지역명 (예: "서울 서초구") or districtCode (예: "11650")
- *   yearMonth  - 조회 연월 (예: "202401"), 없으면 최근 3개월
+ *   yearMonth  - 조회 연월 (예: "202401"), 없으면 최근 6개월
  *   dealType   - "sale" | "lease" | "all" (기본: "all")
  *   complex    - 단지명 필터 (선택)
  *   area       - 면적 필터 (선택, ±10㎡ 범위)
@@ -20,7 +22,6 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const { district, districtCode, yearMonth, dealType = 'all', complex, area } = req.query as Record<string, string>;
 
-    // 지역 코드 확인
     const code = districtCode ?? DISTRICT_CODES[district];
     if (!code) {
       return res.status(400).json({
@@ -29,32 +30,54 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // 조회 개월 목록 구성 (최신 데이터 반영을 위해 6개월로 확장)
     const months = yearMonth ? [yearMonth] : getRecentMonths(6);
-    const cacheKey = `tx:${code}:${months.join('-')}:${dealType}`;
+    const type = (dealType as 'sale' | 'lease' | 'all');
 
-    // 캐시 확인 (빈 결과는 캐시하지 않음 — API 데이터 공개 시차 대응)
-    let transactions = cache.get<Awaited<ReturnType<typeof fetchTransactionRange>>>(cacheKey);
-    if (!transactions) {
-      transactions = await fetchTransactionRange(code, months, dealType as 'sale' | 'lease' | 'all');
-      if (transactions.length > 0) {
-        cache.set(cacheKey, transactions, TTL.TRANSACTION);
+    // ✅ 월별 개별 캐시 확인 → 없는 달만 fetch (공유 캐시 최대 활용)
+    let transactions: Transaction[];
+
+    if (months.length === 1) {
+      // 단일 달: 직접 캐시 조회
+      const key = txCacheKey(code, months[0], type);
+      let txs = cache.get<Transaction[]>(key);
+      if (!txs) {
+        txs = await fetchTransactionRange(code, months, type);
+        if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
+      }
+      transactions = txs ?? [];
+    } else {
+      // 여러 달: 범위 캐시 먼저 확인, 없으면 월별 캐시 활용 후 합산
+      const rangeKey = txRangeCacheKey(code, months, type);
+      const rangeCached = cache.get<Transaction[]>(rangeKey);
+      if (rangeCached) {
+        transactions = rangeCached;
+      } else {
+        // 월별로 캐시 히트 최대화
+        const txArrays = await Promise.all(
+          months.map(async ym => {
+            const key = txCacheKey(code, ym, type);
+            let txs = cache.get<Transaction[]>(key);
+            if (!txs) {
+              txs = await fetchTransactionRange(code, [ym], type);
+              if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
+            }
+            return txs ?? [];
+          }),
+        );
+        transactions = txArrays.flat();
+        if (transactions.length > 0) cache.set(rangeKey, transactions, TTL.TRANSACTION);
       }
     }
 
     // 단지명 필터
     if (complex) {
-      transactions = transactions.filter(t =>
-          t.complexName.includes(complex)
-      );
+      transactions = transactions.filter(t => t.complexName.includes(complex));
     }
 
     // 면적 필터
     if (area) {
       const areaNum = parseFloat(area);
-      transactions = transactions.filter(t =>
-          Math.abs(t.area - areaNum) <= 10
-      );
+      transactions = transactions.filter(t => Math.abs(t.area - areaNum) <= 10);
     }
 
     // 날짜 내림차순 정렬
@@ -63,11 +86,7 @@ router.get('/', async (req: Request, res: Response) => {
     return res.json({
       success: true,
       data: transactions,
-      meta: {
-        totalCount: transactions.length,
-        districtCode: code,
-        months,
-      },
+      meta: { totalCount: transactions.length, districtCode: code, months },
     });
   } catch (err) {
     console.error('[/api/transactions]', err);
@@ -82,10 +101,7 @@ router.get('/', async (req: Request, res: Response) => {
  * GET /api/transactions/complex-stats
  * 단지별 실거래 통계
  *
- * Query params:
- *   district  - 지역명
- *   months    - 조회 개월수 (기본 3)
- *   minCount  - 최소 거래 건수 (기본 1)
+ * ✅ 최적화: 월별 캐시 키로 공유 캐시 활용
  */
 router.get('/complex-stats', async (req: Request, res: Response) => {
   try {
@@ -101,26 +117,36 @@ router.get('/complex-stats', async (req: Request, res: Response) => {
 
     let stats = cache.get<ReturnType<typeof aggregateByComplex>>(cacheKey);
     if (!stats) {
-      const txs = await fetchTransactionRange(code, monthList, 'sale');
-      stats = aggregateByComplex(txs);
-      if (stats.size > 0) {
-        cache.set(cacheKey, stats, TTL.DISTRICT);
-      }
+      // 월별 캐시 활용
+      const txArrays = await Promise.all(
+        monthList.map(async ym => {
+          const key = txCacheKey(code, ym, 'sale');
+          let txs = cache.get<Transaction[]>(key);
+          if (!txs) {
+            txs = await fetchSaleTransactions(code, ym);
+            if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
+          }
+          return txs ?? [];
+        }),
+      );
+      const allTxs = txArrays.flat();
+      stats = aggregateByComplex(allTxs);
+      if (stats.size > 0) cache.set(cacheKey, stats, TTL.DISTRICT);
     }
 
     const minCountNum = parseInt(minCount, 10);
     const result = Array.from(stats.values())
-        .filter(s => s.transactions.length >= minCountNum)
-        .sort((a, b) => b.transactions.length - a.transactions.length)
-        .map(s => ({
-          complexName: s.complexName,
-          neighborhood: s.neighborhood,
-          avgPrice: s.avgPrice,
-          minPrice: s.minPrice,
-          maxPrice: s.maxPrice,
-          transactionCount: s.transactions.length,
-          recentTransactions: s.transactions.slice(0, 5),
-        }));
+      .filter(s => s.transactions.length >= minCountNum)
+      .sort((a, b) => b.transactions.length - a.transactions.length)
+      .map(s => ({
+        complexName: s.complexName,
+        neighborhood: s.neighborhood,
+        avgPrice: s.avgPrice,
+        minPrice: s.minPrice,
+        maxPrice: s.maxPrice,
+        transactionCount: s.transactions.length,
+        recentTransactions: s.transactions.slice(0, 5),
+      }));
 
     return res.json({ success: true, data: result });
   } catch (err) {
@@ -133,10 +159,9 @@ router.get('/complex-stats', async (req: Request, res: Response) => {
  * GET /api/transactions/top-complexes
  * 최고가 단지 TOP N
  *
- * Query params:
- *   months - 조회 개월수 (기본 1)
- *   limit  - 반환 단지 수 (기본 4)
- *   sido   - 시/도 필터 (예: '서울') — 미지정 시 전국
+ * ✅ 최적화:
+ *   - 월별 공유 캐시 활용으로 district-summary / national-stats 와 API 호출 공유
+ *   - sido='서울' 시 서울 25개 구만 조회 (불필요한 전국 조회 방지)
  */
 router.get('/top-complexes', async (req: Request, res: Response) => {
   try {
@@ -148,25 +173,37 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
     const cached = cache.get<unknown[]>(cacheKey);
     if (cached) return res.json({ success: true, data: cached });
 
-    // sido 필터 적용 (미지정 시 전국)
     const districtEntries = sido
-        ? Object.entries(DISTRICT_CODES).filter(([name]) => name.startsWith(sido + ' '))
-        : Object.entries(DISTRICT_CODES);
+      ? Object.entries(DISTRICT_CODES).filter(([name]) => name.startsWith(sido + ' '))
+      : Object.entries(DISTRICT_CODES);
+
     const results = await Promise.allSettled(
-        districtEntries.map(async ([districtName, code]) => {
-          const txs = await fetchTransactionRange(code, monthList, 'sale');
-          const stats = aggregateByComplex(txs);
-          return Array.from(stats.values()).map(s => ({
-            complexName: s.complexName,
-            neighborhood: s.neighborhood,
-            district: districtName,
-            avgPrice: s.avgPrice,
-            minPrice: s.minPrice,
-            maxPrice: s.maxPrice,
-            transactionCount: s.transactions.length,
-            recentTransactions: s.transactions.slice(0, 3),
-          }));
-        })
+      districtEntries.map(async ([districtName, code]) => {
+        // ✅ 월별 공유 캐시 활용 (district-summary 에서 이미 불러온 달은 캐시 히트)
+        const txArrays = await Promise.all(
+          monthList.map(async ym => {
+            const key = txCacheKey(code, ym, 'sale');
+            let txs = cache.get<Transaction[]>(key);
+            if (!txs) {
+              txs = await fetchSaleTransactions(code, ym);
+              if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
+            }
+            return txs ?? [];
+          }),
+        );
+        const txs = txArrays.flat();
+        const stats = aggregateByComplex(txs);
+        return Array.from(stats.values()).map(s => ({
+          complexName: s.complexName,
+          neighborhood: s.neighborhood,
+          district: districtName,
+          avgPrice: s.avgPrice,
+          minPrice: s.minPrice,
+          maxPrice: s.maxPrice,
+          transactionCount: s.transactions.length,
+          recentTransactions: s.transactions.slice(0, 3),
+        }));
+      }),
     );
 
     type ComplexEntry = {
@@ -175,16 +212,14 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
       transactionCount: number; recentTransactions: Transaction[];
     };
     const allComplexes = (results
-        .filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<ComplexEntry[]>[])
-        .flatMap(r => r.value);
+      .filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<ComplexEntry[]>[])
+      .flatMap(r => r.value);
 
     const top = allComplexes
-        .sort((a, b) => b.maxPrice - a.maxPrice)
-        .slice(0, limitNum);
+      .sort((a, b) => b.maxPrice - a.maxPrice)
+      .slice(0, limitNum);
 
-    if (top.length > 0) {
-      cache.set(cacheKey, top, TTL.DISTRICT);
-    }
+    if (top.length > 0) cache.set(cacheKey, top, TTL.DISTRICT);
 
     return res.json({ success: true, data: top });
   } catch (err) {
@@ -195,8 +230,9 @@ router.get('/top-complexes', async (req: Request, res: Response) => {
 
 /**
  * GET /api/transactions/national-stats
- * 전국 실거래 요약 통계 (이번 달 기준)
- * 캐시된 데이터를 재사용하므로 top-complexes 후 빠름
+ * 전국 실거래 요약 통계
+ *
+ * ✅ 최적화: 월별 공유 캐시 활용으로 top-complexes 완료 후 거의 대부분 캐시 히트
  */
 router.get('/national-stats', async (_req: Request, res: Response) => {
   try {
@@ -204,25 +240,31 @@ router.get('/national-stats', async (_req: Request, res: Response) => {
     const cached = cache.get<unknown>(cacheKey);
     if (cached) return res.json({ success: true, data: cached });
 
-    // 이번 달 + 전달 조회 (이번 달 신고 누락 방지)
     const monthList = getRecentMonths(2);
     const districtEntries = Object.entries(DISTRICT_CODES);
 
     const results = await Promise.allSettled(
-        districtEntries.map(async ([districtName, code]) => {
-          const txCacheKey = `tx:${code}:${monthList.join('-')}:sale`;
-          let txs = cache.get<Awaited<ReturnType<typeof fetchTransactionRange>>>(txCacheKey);
-          if (!txs) {
-            txs = await fetchTransactionRange(code, monthList, 'sale');
-            if (txs.length > 0) cache.set(txCacheKey, txs, TTL.TRANSACTION);
-          }
-          return { district: districtName, count: txs.length, prices: txs.map(t => t.price) };
-        }),
+      districtEntries.map(async ([districtName, code]) => {
+        // ✅ 공유 캐시 활용: top-complexes / district-summary 에서 이미 불러온 달은 캐시 히트
+        const txArrays = await Promise.all(
+          monthList.map(async ym => {
+            const key = txCacheKey(code, ym, 'sale');
+            let txs = cache.get<Transaction[]>(key);
+            if (!txs) {
+              txs = await fetchSaleTransactions(code, ym);
+              if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
+            }
+            return txs ?? [];
+          }),
+        );
+        const txs = txArrays.flat();
+        return { district: districtName, count: txs.length, prices: txs.map(t => t.price) };
+      }),
     );
 
     const byDistrict = results
-        .filter((r): r is PromiseFulfilledResult<{ district: string; count: number; prices: number[] }> => r.status === 'fulfilled')
-        .map(r => r.value);
+      .filter((r): r is PromiseFulfilledResult<{ district: string; count: number; prices: number[] }> => r.status === 'fulfilled')
+      .map(r => r.value);
 
     const totalCount = byDistrict.reduce((s, d) => s + d.count, 0);
     const allPrices = byDistrict.flatMap(d => d.prices);
@@ -248,6 +290,8 @@ router.get('/national-stats', async (_req: Request, res: Response) => {
 /**
  * GET /api/transactions/price-trend
  * 지역 월별 평균 가격 추이
+ *
+ * ✅ 최적화: 공유 캐시 활용
  */
 router.get('/price-trend', async (req: Request, res: Response) => {
   try {
@@ -258,20 +302,25 @@ router.get('/price-trend', async (req: Request, res: Response) => {
     const monthList = getRecentMonths(parseInt(months, 10));
     const results: { yearMonth: string; avgPrice: number; count: number }[] = [];
 
-    for (const ym of monthList) {
-      const cacheKey = `tx:${code}:${ym}:sale`;
-      let txs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(cacheKey);
-      if (!txs) {
-        txs = await fetchSaleTransactions(code, ym);
-        cache.set(cacheKey, txs, TTL.TRANSACTION);
-      }
-      if (txs.length > 0) {
-        const avg = Math.round(txs.reduce((s, t) => s + t.price, 0) / txs.length);
-        results.push({ yearMonth: ym, avgPrice: avg, count: txs.length });
-      }
-    }
+    await Promise.all(
+      monthList.map(async ym => {
+        const key = txCacheKey(code, ym, 'sale');
+        let txs = cache.get<Transaction[]>(key);
+        if (!txs) {
+          txs = await fetchSaleTransactions(code, ym);
+          if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
+        }
+        const list = txs ?? [];
+        if (list.length > 0) {
+          const avg = Math.round(list.reduce((s, t) => s + t.price, 0) / list.length);
+          results.push({ yearMonth: ym, avgPrice: avg, count: list.length });
+        }
+      }),
+    );
 
-    return res.json({ success: true, data: results.reverse() });
+    results.sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
+
+    return res.json({ success: true, data: results });
   } catch (err) {
     console.error('[/api/transactions/price-trend]', err);
     return res.status(500).json({ success: false, error: '추이 조회 실패' });

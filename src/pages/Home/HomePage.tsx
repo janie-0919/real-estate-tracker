@@ -1,31 +1,36 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { parseSearchQuery, buildListingsUrl } from '@/utils/search';
-import { useDistrictSummary, useNationalStats, useTopComplexes, useTransactions } from '@/hooks/useTransactions';
+import { useDashboard } from '@/hooks/useDashboard';
 import TransactionCard from '@/components/listings/TransactionCard';
 import { formatPrice } from '@/utils/format';
 import styles from './HomePage.module.scss';
 
 const REGION_DEFAULT_COUNT = 5;
 
+// ── Skeleton 컴포넌트 ──────────────────────────────────────────────
+function SkeletonCard() {
+  return <div className={styles.skeletonCard} aria-hidden />;
+}
+
+function SkeletonRow() {
+  return <tr className={styles.skeletonRow} aria-hidden><td colSpan={5}><div className={styles.skeletonLine} /></td></tr>;
+}
+
 export default function HomePage() {
   const [searchValue, setSearchValue] = useState('');
   const [showAllRegions, setShowAllRegions] = useState(false);
   const navigate = useNavigate();
 
-  // 서울 지역별 요약 (stat cards + region table)
-  const { data: districtSummary, isLoading: summaryLoading } = useDistrictSummary({ sido: '서울' });
+  // ✅ 단 1번의 API 요청으로 대시보드 전체 데이터 수신
+  const { data: dashboard, isLoading } = useDashboard();
 
-  // 서울 최고가 단지 (sido=서울 → 25개 구만 조회)
-  const { data: topComplexes, isLoading: topStatsLoading } = useTopComplexes({ months: 1, limit: 4, sido: '서울' });
-
-  // 전국 통계 — top-complexes 완료 후 실행
-  const { data: nationalStats, isLoading: nationalLoading } = useNationalStats();
-
-  // 최근 실거래: 강남·마포·용산·성동
-  const { data: gangnamTx,   isLoading: gangnamLoading }   = useTransactions({ district: '서울 강남구',  dealType: 'sale' });
-  const { data: mapoTx,      isLoading: mapoLoading }      = useTransactions({ district: '서울 마포구',  dealType: 'sale' });
-  const { data: yongsanTx,   isLoading: yongsanLoading }   = useTransactions({ district: '서울 용산구',  dealType: 'sale' });
+  const districtSummary = dashboard?.districtSummary;
+  const topComplexes    = dashboard?.topComplexes;
+  const nationalStats   = dashboard?.nationalStats;
+  const gangnamTx       = dashboard?.recentTx?.['서울 강남구'];
+  const mapoTx          = dashboard?.recentTx?.['서울 마포구'];
+  const yongsanTx       = dashboard?.recentTx?.['서울 용산구'];
 
   // ── 서울 통계 계산 ──
   const seoulTotalTx = districtSummary?.reduce((sum, d) => sum + d.count, 0) ?? 0;
@@ -41,49 +46,49 @@ export default function HomePage() {
     {
       category: 'seoul',
       label: '이번달 서울 실거래',
-      value: summaryLoading ? '...' : `${seoulTotalTx.toLocaleString()}건`,
+      value: isLoading ? '...' : `${seoulTotalTx.toLocaleString()}건`,
       sub: '국토부 실거래 데이터',
     },
     {
       category: 'national',
       label: '이번달 전국 실거래',
-      value: nationalLoading ? '...' : (nationalStats ? `${nationalStats.totalCount.toLocaleString()}건` : '-'),
+      value: isLoading ? '...' : (nationalStats ? `${nationalStats.totalCount.toLocaleString()}건` : '-'),
       sub: '전국 시군구 집계',
     },
     {
       category: 'seoul',
       label: '서울 평균 실거래가',
-      value: summaryLoading ? '...' : (seoulAvgPrice > 0 ? formatPrice(seoulAvgPrice) : '-'),
+      value: isLoading ? '...' : (seoulAvgPrice > 0 ? formatPrice(seoulAvgPrice) : '-'),
       sub: '매매 기준 (최근 1개월)',
     },
     {
       category: 'national',
       label: '전국 평균 실거래가',
-      value: nationalLoading ? '...' : (nationalStats?.avgPrice ? formatPrice(nationalStats.avgPrice) : '-'),
+      value: isLoading ? '...' : (nationalStats?.avgPrice ? formatPrice(nationalStats.avgPrice) : '-'),
       sub: '매매 기준 (최근 1개월)',
     },
     {
       category: 'seoul',
       label: '서울 최고 실거래가',
-      value: summaryLoading ? '...' : (seoulMaxPrice > 0 ? formatPrice(seoulMaxPrice) : '-'),
+      value: isLoading ? '...' : (seoulMaxPrice > 0 ? formatPrice(seoulMaxPrice) : '-'),
       sub: '서울 전체 단지 기준',
     },
     {
       category: 'national',
       label: '전국 최고 실거래가',
-      value: nationalLoading ? '...' : (nationalStats?.maxPrice ? formatPrice(nationalStats.maxPrice) : '-'),
+      value: isLoading ? '...' : (nationalStats?.maxPrice ? formatPrice(nationalStats.maxPrice) : '-'),
       sub: '전국 시군구 기준',
     },
     {
       category: 'seoul',
       label: '서울 거래 활발 지역',
-      value: summaryLoading ? '...' : (seoulTopDistrict ? seoulTopDistrict.district.replace('서울 ', '') : '-'),
+      value: isLoading ? '...' : (seoulTopDistrict ? seoulTopDistrict.district.replace('서울 ', '') : '-'),
       sub: seoulTopDistrict ? `${seoulTopDistrict.count}건 거래` : '집계 중',
     },
     {
       category: 'national',
       label: '전국 거래 활발 지역',
-      value: nationalLoading ? '...' : (nationalStats?.topDistrict?.district ?? '-'),
+      value: isLoading ? '...' : (nationalStats?.topDistrict?.district ?? '-'),
       sub: nationalStats?.topDistrict ? `${nationalStats.topDistrict.count}건 거래` : '집계 중',
     },
   ];
@@ -159,8 +164,17 @@ export default function HomePage() {
           <Link to="/listings" className={styles.seeAll}>전체 보기 →</Link>
         </div>
         <div className={styles.regionTable}>
-          {summaryLoading ? (
-            <p style={{ padding: '1rem', color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
+          {isLoading ? (
+            <table>
+              <thead>
+                <tr><th>지역</th><th>거래 건수</th><th>평균 실거래가</th><th>최저가</th><th>최고가</th></tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: REGION_DEFAULT_COUNT }).map((_, i) => (
+                  <SkeletonRow key={i} />
+                ))}
+              </tbody>
+            </table>
           ) : (
             <table>
               <thead>
@@ -205,16 +219,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 서울 최고가 실거래 단지 (전체) */}
+      {/* 서울 최고가 실거래 단지 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
             <span className={styles.upIcon}>🏆</span> 서울 최고가 실거래 단지 TOP 4
           </h2>
-          {/*<span className={styles.dataLabel}>강남·서초·용산·송파 합산</span>*/}
         </div>
-        {topStatsLoading ? (
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
+        {isLoading ? (
+          <div className={styles.listingGrid}>
+            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
         ) : (topComplexes ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
             {(topComplexes ?? []).map(c => (
@@ -249,8 +264,10 @@ export default function HomePage() {
           </h2>
           <Link to="/listings?district=서울 강남구" className={styles.seeAll}>더 보기 →</Link>
         </div>
-        {gangnamLoading ? (
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
+        {isLoading ? (
+          <div className={styles.listingGrid}>
+            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
         ) : (gangnamTx?.slice(0, 4) ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
             {gangnamTx!.slice(0, 4).map((t, idx) => (
@@ -270,8 +287,10 @@ export default function HomePage() {
           </h2>
           <Link to="/listings?district=서울 마포구" className={styles.seeAll}>더 보기 →</Link>
         </div>
-        {mapoLoading ? (
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
+        {isLoading ? (
+          <div className={styles.listingGrid}>
+            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
         ) : (mapoTx?.slice(0, 4) ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
             {mapoTx!.slice(0, 4).map((t, idx) => (
@@ -291,8 +310,10 @@ export default function HomePage() {
           </h2>
           <Link to="/listings?district=서울 용산구" className={styles.seeAll}>더 보기 →</Link>
         </div>
-        {yongsanLoading ? (
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
+        {isLoading ? (
+          <div className={styles.listingGrid}>
+            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
         ) : (yongsanTx?.slice(0, 4) ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
             {yongsanTx!.slice(0, 4).map((t, idx) => (

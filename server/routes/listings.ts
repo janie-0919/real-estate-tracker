@@ -8,19 +8,13 @@ import { Router, type Request, type Response } from 'express';
 import { fetchSaleTransactions, getRecentMonths } from '../services/rebTransactions.js';
 import { calcDeviation } from '../services/listings.js';
 import { DISTRICT_CODES } from '../types.js';
-import { cache, TTL } from '../services/cache.js';
+import { cache, TTL, txCacheKey } from '../services/cache.js';
 
 const router = Router();
 
 /**
  * GET /api/listings/deviation
  * 특정 매물의 실거래가 대비 괴리율 계산
- *
- * Query params:
- *   district      - 지역명
- *   complex       - 단지명
- *   area          - 면적(㎡)
- *   listingPrice  - 현재 호가(만원)
  */
 router.get('/deviation', async (req: Request, res: Response) => {
   try {
@@ -40,19 +34,20 @@ router.get('/deviation', async (req: Request, res: Response) => {
     if (!code) return res.status(400).json({ success: false, error: '지역 코드가 없습니다.' });
 
     const months = getRecentMonths(6);
-    const cacheKey = `tx:${code}:${months.join('-')}:sale`;
-    let txs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(cacheKey);
 
-    if (!txs) {
-      // 최근 6개월 실거래가 병렬 수집
-      const results = await Promise.allSettled(
-        months.map(ym => fetchSaleTransactions(code, ym)),
-      );
-      txs = results
-        .filter((r): r is PromiseFulfilledResult<typeof txs & NonNullable<unknown>> => r.status === 'fulfilled')
-        .flatMap(r => r.value ?? []);
-      cache.set(cacheKey, txs, TTL.TRANSACTION);
-    }
+    // 월별 캐시를 먼저 확인하고, 없는 달만 fetch (공유 캐시 활용)
+    const txArrays = await Promise.all(
+      months.map(async ym => {
+        const key = txCacheKey(code, ym, 'sale');
+        let txs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(key);
+        if (!txs) {
+          txs = await fetchSaleTransactions(code, ym);
+          if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
+        }
+        return txs ?? [];
+      }),
+    );
+    const txs = txArrays.flat();
 
     // 단지 필터
     const filtered = complex
@@ -76,41 +71,54 @@ router.get('/deviation', async (req: Request, res: Response) => {
  * GET /api/listings/district-summary
  * 지역별 최근 실거래 요약 (대시보드 통계용)
  *
- * 이번 달 데이터가 없으면 전달로 자동 fallback
- * (국토부 실거래 신고는 30일 이내 → 이번 달 초는 데이터 부족)
+ * ✅ 최적화:
+ *   - 캐시 키를 tx:{code}:{ym}:sale 형식으로 통일 → top-complexes / national-stats 와 캐시 공유
+ *   - 이번 달 + 전달을 동시에(병렬) fetch → 순차 fallback 제거
+ *   - 결과 단위 캐시: 전체 summary 결과도 캐시해 재방문 시 즉시 반환
  */
 router.get('/district-summary', async (req: Request, res: Response) => {
   try {
     const { sido } = req.query as Record<string, string>;
-    // sido 미지정 시 서울만 조회 (전국 250개 조회는 /transactions/national-stats 사용)
-    const allDistricts = Object.keys(DISTRICT_CODES);
     const prefix = sido ? (sido + ' ') : '서울 ';
-    const districts = allDistricts.filter(d => d.startsWith(prefix));
-    // 이번 달 + 전달: 이번 달 데이터 부족 시 전달로 fallback
+    const districts = Object.keys(DISTRICT_CODES).filter(d => d.startsWith(prefix));
+
+    // 전체 결과 캐시 확인 (두 번째 요청부터는 즉시 반환)
+    const summaryCacheKey = `district-summary:${prefix.trim()}`;
+    const cachedSummary = cache.get<unknown[]>(summaryCacheKey);
+    if (cachedSummary) {
+      return res.json({ success: true, data: cachedSummary });
+    }
+
     const [currentMonth, prevMonth] = getRecentMonths(2);
 
     const summaries = await Promise.allSettled(
       districts.map(async district => {
         const code = DISTRICT_CODES[district];
 
-        // 이번 달 조회 (캐시 우선)
-        const curKey = `summary:${code}:${currentMonth}`;
-        let txs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(curKey);
-        if (!txs) {
-          txs = await fetchSaleTransactions(code, currentMonth);
-          if (txs.length > 0) cache.set(curKey, txs, TTL.DISTRICT); // 결과 있을 때만 캐시
-        }
+        // 이번 달 + 전달을 동시에 fetch (공유 캐시 활용 → 다른 엔드포인트가 먼저 불렀으면 캐시 히트)
+        const [curTxs, prevTxs] = await Promise.all([
+          (async () => {
+            const key = txCacheKey(code, currentMonth, 'sale');
+            let txs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(key);
+            if (!txs) {
+              txs = await fetchSaleTransactions(code, currentMonth);
+              if (txs.length > 0) cache.set(key, txs, TTL.DISTRICT);
+            }
+            return txs ?? [];
+          })(),
+          (async () => {
+            const key = txCacheKey(code, prevMonth, 'sale');
+            let txs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(key);
+            if (!txs) {
+              txs = await fetchSaleTransactions(code, prevMonth);
+              if (txs.length > 0) cache.set(key, txs, TTL.DISTRICT);
+            }
+            return txs ?? [];
+          })(),
+        ]);
 
-        // 이번 달 데이터 없으면 전달로 fallback
-        if (txs.length === 0) {
-          const prevKey = `summary:${code}:${prevMonth}`;
-          let prevTxs = cache.get<Awaited<ReturnType<typeof fetchSaleTransactions>>>(prevKey);
-          if (!prevTxs) {
-            prevTxs = await fetchSaleTransactions(code, prevMonth);
-            if (prevTxs.length > 0) cache.set(prevKey, prevTxs, TTL.DISTRICT);
-          }
-          txs = prevTxs;
-        }
+        // 이번 달 우선, 없으면 전달 사용
+        const txs = curTxs.length > 0 ? curTxs : prevTxs;
 
         if (txs.length === 0) {
           return { district, count: 0, avgPrice: 0, maxPrice: 0, minPrice: 0 };
@@ -128,8 +136,11 @@ router.get('/district-summary', async (req: Request, res: Response) => {
     );
 
     const data = summaries
-      .filter((r): r is PromiseFulfilledResult<typeof summaries[0] extends PromiseFulfilledResult<infer T> ? T : never> => r.status === 'fulfilled')
+      .filter((r): r is PromiseFulfilledResult<{ district: string; count: number; avgPrice: number; maxPrice: number; minPrice: number }> => r.status === 'fulfilled')
       .map(r => r.value);
+
+    // 전체 결과도 캐시 (TTL: 24시간)
+    if (data.length > 0) cache.set(summaryCacheKey, data, TTL.DISTRICT);
 
     return res.json({ success: true, data });
   } catch (err) {

@@ -135,6 +135,24 @@ export interface RebMarketStat {
   changeRate: number | null;  // 전월 대비 변동률(%)
 }
 
+// ── 대시보드 통합 응답 타입 ───────────────────────────────────────
+
+export interface DashboardData {
+  /** 서울 25개 구별 실거래 요약 */
+  districtSummary: DistrictSummary[];
+  /** 서울 최고가 단지 TOP 4 */
+  topComplexes: (ComplexStat & { district: string })[];
+  /** 전국 실거래 요약 통계 */
+  nationalStats: {
+    totalCount: number;
+    avgPrice: number;
+    maxPrice: number;
+    topDistrict: { district: string; count: number } | null;
+  };
+  /** 강남·마포·용산 최근 실거래 (각 최대 4건) */
+  recentTx: Record<string, RealTransaction[]>;
+}
+
 // ── API 함수 ──────────────────────────────────────────────────────
 
 /** 아파트 실거래가 목록 */
@@ -278,5 +296,16 @@ export const api = {
         '/reb/market/overview',
         params as unknown as Record<string, string>,
     );
+  },
+
+  // ── 대시보드 통합 API ──────────────────────────────────────────
+
+  /**
+   * 대시보드 전용 통합 엔드포인트
+   * 서울 구별 요약 / 최고가 단지 TOP4 / 전국 통계 / 강남·마포·용산 최근 실거래를
+   * 단 1번의 요청으로 반환합니다.
+   */
+  getDashboard() {
+    return request<DashboardData>('/dashboard');
   },
 };
