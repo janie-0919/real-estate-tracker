@@ -36,7 +36,6 @@ export default function HomePage() {
     : 0;
   const seoulMaxPrice = districtSummary?.length ? Math.max(...districtSummary.map(d => d.maxPrice)) : 0;
   const seoulTopDistrict = districtSummary?.slice().sort((a, b) => b.count - a.count)[0];
-  const seoulCheapestDistrict = seoulDistrictsWithData.slice().sort((a, b) => a.avgPrice - b.avgPrice)[0];
 
   // ── 8개 통계 카드 ──
   const STAT_CARDS: { label: string; value: string; sub: string; category: 'seoul' | 'national' }[] = [
@@ -217,9 +216,9 @@ export default function HomePage() {
         </div>
         {topStatsLoading ? (
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터 불러오는 중...</p>
-        ) : topComplexes.length > 0 ? (
+        ) : (topComplexes ?? []).length > 0 ? (
           <div className={styles.listingGrid}>
-            {topComplexes.map(c => (
+            {(topComplexes ?? []).map(c => (
               <Link
                 key={`${c.complexName}_${c.neighborhood}`}
                 to={`/complex-detail?name=${encodeURIComponent(c.complexName)}&district=${encodeURIComponent(c.district)}`}
