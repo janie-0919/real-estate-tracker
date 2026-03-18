@@ -32,7 +32,7 @@
 .sectionLabel {
   padding: 0 $spacing-3;
   margin-bottom: $spacing-2;
-  font-size: $font-size-xs;
+  font-size: $font-size-md;
   font-weight: $font-weight-semibold;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -82,7 +82,7 @@
 
 .sectionLabelRow {
   @include flex(row, space-between, center);
-  padding: 0 $spacing-3;
+  padding: 0 0 0 $spacing-3;
   margin-bottom: $spacing-2;
 
   .sectionLabel {
@@ -108,9 +108,9 @@
   }
 
   &.editBtnActive {
-    color: $color-primary-700;
-    background: $color-primary-50;
-    border-color: $color-primary-300;
+    color: $color-bg-surface;
+    background: $color-primary-700;
+    border-color: $color-primary-700;
   }
 }
 
@@ -157,4 +157,19 @@
   @include flex(row, flex-start, center, $spacing-1);
   font-size: $font-size-xs;
   color: $color-text-secondary;
+}
+
+//.regionPicker {
+//  max-height: calc(100% - 160px);
+//  overflow-y: auto;
+//  @include scrollbar-thin;
+//}
+
+.regionLabel {
+  padding: $spacing-2 $spacing-3 $spacing-1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  letter-spacing: 0.05em;
+  margin-top: $spacing-2;
 }
