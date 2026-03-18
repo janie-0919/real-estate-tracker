@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { AlertCondition } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
@@ -7,32 +7,7 @@ import Badge from '@/components/ui/Badge';
 import { formatDate } from '@/utils/format';
 import { SEOUL_DISTRICT_NAMES } from '@/data/districts';
 import styles from './AlertsPage.module.scss';
-
-const DEMO_ALERTS: AlertCondition[] = [
-  {
-    id: 'A001',
-    name: '강남 소형 급매',
-    districts: ['서울 강남구'],
-    dealType: 'sale',
-    priceMax: 90000,
-    areaMin: 59,
-    areaMax: 65,
-    floorMin: 3,
-    channels: ['web', 'email'],
-    isActive: true,
-    createdAt: '2024-01-10',
-  },
-  {
-    id: 'A002',
-    name: '마포 전세',
-    districts: ['서울 마포구'],
-    dealType: 'lease',
-    priceMax: 60000,
-    channels: ['web'],
-    isActive: false,
-    createdAt: '2024-01-05',
-  },
-];
+import { useAlerts } from '@/hooks/useAlerts';
 
 const DISTRICTS = SEOUL_DISTRICT_NAMES;
 
@@ -40,7 +15,7 @@ const defaultForm: Omit<AlertCondition, 'id' | 'createdAt'> = {
   name: '',
   districts: [],
   dealType: 'sale',
-  channels: ['web'],
+  channels: ['email'],
   isActive: true,
   priceMax: 100000,
   areaMin: 33,
@@ -108,26 +83,16 @@ function SliderField({ label, unit, value, min, max, step, displayFn, onChange }
 export default function AlertsPage() {
   const { user } = useAuth();
   const location = useLocation();
-  const [alerts, setAlerts] = useState<AlertCondition[]>(DEMO_ALERTS);
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({ ...defaultForm });
 
-  const toggleActive = (id: string) => {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, isActive: !a.isActive } : a));
-  };
+  const { alerts, isLoading, addAlert, toggleAlert, deleteAlert } = useAlerts();
 
-  const deleteAlert = (id: string) => {
-    setAlerts(prev => prev.filter(a => a.id !== id));
-  };
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newAlert: AlertCondition = {
-      ...form,
-      id: `A${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setAlerts(prev => [...prev, newAlert]);
+    addAlert({ ...form });
     setIsCreating(false);
     setForm({ ...defaultForm });
   };
@@ -141,15 +106,6 @@ export default function AlertsPage() {
     }));
   };
 
-  const toggleChannel = (ch: 'web' | 'email') => {
-    setForm(prev => ({
-      ...prev,
-      channels: prev.channels.includes(ch)
-        ? prev.channels.filter(x => x !== ch)
-        : [...prev.channels, ch],
-    }));
-  };
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -158,7 +114,7 @@ export default function AlertsPage() {
           <p className={styles.sub}>원하는 조건의 매물이 등록되면 즉시 알림을 받으세요</p>
         </div>
         {!isCreating && (
-          <Button variant="primary" onClick={() => setIsCreating(true)}
+          <Button variant="primary" onClick={() => user ? setIsCreating(true) : navigate(`/login?from=${encodeURIComponent(location.pathname)}`)}
             leftIcon={
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -276,18 +232,9 @@ export default function AlertsPage() {
 
             <div className={styles.formGroup}>
               <label className={styles.label}>알림 채널</label>
-              <div className={styles.channelGroup}>
-                {(['web', 'email'] as const).map(ch => (
-                  <label key={ch} className={styles.channelLabel}>
-                    <input
-                      type="checkbox"
-                      checked={form.channels.includes(ch)}
-                      onChange={() => toggleChannel(ch)}
-                    />
-                    {ch === 'web' ? '🌐 웹 알림' : '📧 이메일'}
-                  </label>
-                ))}
-              </div>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                📧 <span style={{ fontSize: '0.875rem', color: '#111827' }}>가입한 이메일</span>로 알림이 발송됩니다.
+              </p>
             </div>
 
             <div className={styles.formActions}>
@@ -297,70 +244,73 @@ export default function AlertsPage() {
           </form>
         </div>
       )}
+      {isLoading ? (
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>알림 불러오는 중...</p>
+      ) : (
+          <div className={styles.alertList}>
+            {alerts.length === 0 ? (
+                <div className={styles.empty}>
+                  <p>설정된 알림이 없습니다.</p>
+                  <p className={styles.emptySub}>알림을 추가하면 조건에 맞는 매물이 등록될 때 즉시 알림을 받을 수 있습니다.</p>
+                </div>
+            ) : (
+                alerts.map(alert => (
+                    <div key={alert.id} className={`${styles.alertCard} ${!alert.isActive ? styles.inactive : ''}`}>
+                      <div className={styles.alertMain}>
+                        <div className={styles.alertHeader}>
+                          <h3 className={styles.alertName}>{alert.name}</h3>
+                          <Badge variant={alert.isActive ? 'success' : 'default'}>
+                            {alert.isActive ? '활성' : '비활성'}
+                          </Badge>
+                        </div>
+                        <div className={styles.alertConditions}>
+                          {alert.districts.map(d => <Badge key={d} variant="info" size="sm">{d}</Badge>)}
+                          {alert.dealType !== 'all' && (
+                              <Badge variant="primary" size="sm">
+                                {alert.dealType === 'sale' ? '매매' : alert.dealType === 'lease' ? '전세' : '월세'}
+                              </Badge>
+                          )}
+                          {alert.priceMax && <Badge variant="default" size="sm">~{manwonToLabel(alert.priceMax)}</Badge>}
+                          {alert.areaMin && <Badge variant="default" size="sm">{alert.areaMin}㎡↑</Badge>}
+                          {alert.areaMax && <Badge variant="default" size="sm">{alert.areaMax}㎡↓</Badge>}
+                          {alert.floorMin && <Badge variant="default" size="sm">{alert.floorMin}층↑</Badge>}
+                        </div>
+                        <div className={styles.alertMeta}>
+                          <span>📧 이메일 알림</span>
+                          <span>생성: {formatDate(alert.createdAt)}</span>
+                        </div>
+                      </div>
 
-      <div className={styles.alertList}>
-        {alerts.length === 0 ? (
-          <div className={styles.empty}>
-            <p>설정된 알림이 없습니다.</p>
-            <p className={styles.emptySub}>알림을 추가하면 조건에 맞는 매물이 등록될 때 즉시 알림을 받을 수 있습니다.</p>
+                      <div className={styles.alertActions}>
+                        {/* 토글 스위치 */}
+                        <button
+                            className={styles.toggleBtn}
+                            onClick={() => toggleAlert(alert.id, alert.isActive)}
+                            title={alert.isActive ? '비활성화' : '활성화'}
+                            aria-pressed={alert.isActive}
+                        >
+                          <div className={`${styles.toggleTrack} ${alert.isActive ? styles.toggleOn : ''}`}>
+                            <div className={styles.toggleThumb} />
+                          </div>
+                        </button>
+                        <button
+                            className={styles.deleteBtn}
+                            onClick={() => deleteAlert(alert.id)}
+                            title="삭제"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6l-1 14H6L5 6" />
+                            <path d="M10 11v6M14 11v6" />
+                            <path d="M9 6V4h6v2" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                ))
+            )}
           </div>
-        ) : (
-          alerts.map(alert => (
-            <div key={alert.id} className={`${styles.alertCard} ${!alert.isActive ? styles.inactive : ''}`}>
-              <div className={styles.alertMain}>
-                <div className={styles.alertHeader}>
-                  <h3 className={styles.alertName}>{alert.name}</h3>
-                  <Badge variant={alert.isActive ? 'success' : 'default'}>
-                    {alert.isActive ? '활성' : '비활성'}
-                  </Badge>
-                </div>
-                <div className={styles.alertConditions}>
-                  {alert.districts.map(d => <Badge key={d} variant="info" size="sm">{d}</Badge>)}
-                  {alert.dealType !== 'all' && (
-                    <Badge variant="primary" size="sm">
-                      {alert.dealType === 'sale' ? '매매' : alert.dealType === 'lease' ? '전세' : '월세'}
-                    </Badge>
-                  )}
-                  {alert.priceMax && <Badge variant="default" size="sm">~{manwonToLabel(alert.priceMax)}</Badge>}
-                  {alert.areaMin && <Badge variant="default" size="sm">{alert.areaMin}㎡↑</Badge>}
-                  {alert.areaMax && <Badge variant="default" size="sm">{alert.areaMax}㎡↓</Badge>}
-                  {alert.floorMin && <Badge variant="default" size="sm">{alert.floorMin}층↑</Badge>}
-                </div>
-                <div className={styles.alertMeta}>
-                  <span>채널: {alert.channels.map(c => c === 'web' ? '웹' : '이메일').join(', ')}</span>
-                  <span>생성: {formatDate(alert.createdAt)}</span>
-                </div>
-              </div>
-
-              <div className={styles.alertActions}>
-                {/* 토글 스위치 */}
-                <button
-                  className={styles.toggleBtn}
-                  onClick={() => toggleActive(alert.id)}
-                  title={alert.isActive ? '비활성화' : '활성화'}
-                  aria-pressed={alert.isActive}
-                >
-                  <div className={`${styles.toggleTrack} ${alert.isActive ? styles.toggleOn : ''}`}>
-                    <div className={styles.toggleThumb} />
-                  </div>
-                </button>
-                <button
-                  className={styles.deleteBtn}
-                  onClick={() => deleteAlert(alert.id)}
-                  title="삭제"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6l-1 14H6L5 6" />
-                    <path d="M10 11v6M14 11v6" />
-                    <path d="M9 6V4h6v2" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      )}
     </div>
   );
 }
