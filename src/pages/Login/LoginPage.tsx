@@ -6,6 +6,16 @@ import styles from './LoginPage.module.scss';
 
 type Tab = 'login' | 'signup' | 'forgot';
 
+function translateAuthError(msg: string): string {
+  if (msg.includes('Invalid login credentials')) return '이메일 또는 비밀번호가 올바르지 않습니다.';
+  if (msg.includes('Email not confirmed'))        return '이메일 인증이 완료되지 않았습니다. 받은 편지함을 확인해주세요.';
+  if (msg.includes('User already registered'))    return '이미 가입된 이메일입니다.';
+  if (msg.includes('Password should be'))         return '비밀번호는 8자 이상이어야 합니다.';
+  if (msg.includes('Unable to validate'))         return '잠시 후 다시 시도해주세요.';
+  if (msg.includes('Email rate limit'))           return '잠시 후 다시 시도해주세요.';
+  return msg;
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -53,7 +63,7 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '오류가 발생했습니다.';
-      setError(msg);
+      setError(translateAuthError(msg));
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +76,7 @@ export default function LoginPage() {
       provider: 'google',
       options: { redirectTo },
     });
-    if (error) setError(error.message);
+    if (error) setError(translateAuthError(error.message));
   };
 
   const handleKakao = async () => {
@@ -76,7 +86,7 @@ export default function LoginPage() {
       provider: 'kakao',
       options: { redirectTo },
     });
-    if (error) setError(error.message);
+    if (error) setError(translateAuthError(error.message));
   };
 
   return (
