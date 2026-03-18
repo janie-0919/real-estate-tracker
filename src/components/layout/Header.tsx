@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { parseSearchQuery, buildListingsUrl } from '@/utils/search';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFavoriteDistricts } from '@/hooks/useFavoriteDistricts';
 import styles from './Header.module.scss';
 
 export default function Header() {
@@ -10,6 +11,7 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, isLoading: authLoading } = useAuth();
+  const { favorites } = useFavoriteDistricts();
 
   // 페이지 이동 시 메뉴 닫기
   useEffect(() => {
@@ -121,12 +123,19 @@ export default function Header() {
         </form>
 
         <nav className={styles.drawerNav}>
-          <Link to="/listings" className={styles.drawerNavLink}>
+          <Link to="/" className={styles.drawerNavLink}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="7" height="7" rx="1" />
               <rect x="14" y="3" width="7" height="7" rx="1" />
               <rect x="3" y="14" width="7" height="7" rx="1" />
               <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            대시보드
+          </Link>
+          <Link to="/listings" className={styles.drawerNavLink}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
             매물 목록
           </Link>
@@ -144,7 +153,35 @@ export default function Header() {
             알림 설정
           </Link>
         </nav>
-
+        {/* 드로어 관심 지역 */}
+        <div className={styles.drawerDistricts}>
+          <div className={styles.drawerDistrictHeader}>
+            <p className={styles.drawerDistrictLabel}>관심 지역</p>
+            <Link
+                to="/districts"
+                className={styles.drawerDistrictEdit}
+                onClick={() => setMenuOpen(false)}
+            >
+              편집
+            </Link>
+          </div>
+          {favorites.length > 0 ? (
+              <div className={styles.drawerDistrictList}>
+                {favorites.map(district => (
+                    <Link
+                        key={district}
+                        to={`/listings?district=${encodeURIComponent(district)}`}
+                        className={styles.drawerDistrictItem}
+                        onClick={() => setMenuOpen(false)}
+                    >
+                      {district.replace(/^[가-힣]+ /, '')}
+                    </Link>
+                ))}
+              </div>
+          ) : (
+              <p className={styles.drawerDistrictEmpty}>편집을 눌러 관심 지역을 추가하세요</p>
+          )}
+        </div>
         <div className={styles.drawerFooter}>
           {authLoading ? (
             <div className={styles.authSkeleton} style={{ width: '100%', height: '40px' }} />

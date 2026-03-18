@@ -17,8 +17,11 @@
   @include flex(row, space-between, center, $spacing-4);
   height: 100%;
   padding: 0 $spacing-6;
-  //max-width: $layout-max-width;
   margin: 0 auto;
+
+  @media (max-width: #{$bp-md}) {
+    padding: 0 $spacing-4;
+  }
 }
 
 .logo {
@@ -345,4 +348,75 @@
   @media (min-width: #{$bp-md}) {
     display: none;
   }
+}
+
+// ── 드로어 관심 지역 ──────────────────────────────────────────────
+
+.drawerDistricts {
+  border-top: 1px solid $color-gray-100;
+  padding-top: $spacing-3;
+}
+
+.drawerDistrictHeader {
+  @include flex(row, space-between, center);
+  margin-bottom: $spacing-2;
+}
+
+.drawerDistrictLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-2;
+}
+
+.drawerDistrictList {
+  @include flex(row, flex-start, center);
+  flex-wrap: wrap;
+  gap: $spacing-2;
+}
+
+.drawerDistrictItem {
+  padding: $spacing-1 $spacing-3;
+  background: $color-gray-50;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-decoration: none;
+  transition: background $transition-fast, color $transition-fast;
+
+  &:hover {
+    background: $color-primary-50;
+    color: $color-primary-700;
+    border-color: $color-primary-200;
+  }
+}
+
+.drawerDistrictEdit {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-primary-600;
+  border: 1px solid $color-primary-200;
+  border-radius: $radius-sm;
+  padding: 2px $spacing-2;
+  text-decoration: none;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-primary-50;
+  }
+}
+
+.drawerDistrictList {
+  @include flex(row, flex-start, center);
+  flex-wrap: wrap;
+  gap: $spacing-2;
+}
+
+.drawerDistrictEmpty {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  font-style: italic;
 }
