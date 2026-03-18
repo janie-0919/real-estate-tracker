@@ -134,7 +134,7 @@ export default function AlertsPage() {
             <line x1="12" y1="9" x2="12" y2="13" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
-          <span>로그인하지 않으면 알림 설정이 <strong>새로고침 시 초기화</strong>됩니다.</span>
+          <span>로그인하면 알림 설정이 <strong>저장되고 이메일 알림</strong>을 받을 수 있습니다.</span>
           <Link to={`/login?from=${encodeURIComponent(location.pathname)}`} className={styles.loginBannerLink}>
             로그인하기
           </Link>
