@@ -431,3 +431,33 @@
     grid-template-columns: 1fr;
   }
 }
+
+// ── 거래유형 탭 ───────────────────────────────────────────────────
+.dealTabs {
+  @include flex(row, flex-start, center, $spacing-2);
+  margin-bottom: $spacing-2;
+}
+
+.dealTab {
+  @include button-reset;
+  padding: $spacing-1 $spacing-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-primary-300;
+    color: $color-primary-600;
+    background: $color-primary-50;
+  }
+
+  &.dealTabActive {
+    background: $color-primary-600;
+    border-color: $color-primary-600;
+    color: white;
+  }
+}

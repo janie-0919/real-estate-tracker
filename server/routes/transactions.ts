@@ -31,34 +31,34 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     const months = yearMonth ? [yearMonth] : getRecentMonths(6);
-    const type = (dealType as 'sale' | 'lease' | 'all');
+    const fetchType = dealType === 'monthly' ? 'lease' : dealType as 'sale' | 'lease' | 'all';
 
-    // ✅ 월별 개별 캐시 확인 → 없는 달만 fetch (공유 캐시 최대 활용)
     let transactions: Transaction[];
 
     if (months.length === 1) {
-      // 단일 달: 직접 캐시 조회
-      const key = txCacheKey(code, months[0], type);
-      let txs = cache.get<Transaction[]>(key);
-      if (!txs) {
-        txs = await fetchTransactionRange(code, months, type);
+      // 단일 달
+    }
+      if (months.length === 1) {
+        const key = txCacheKey(code, months[0], fetchType);
+        let txs = cache.get<Transaction[]>(key);
+        if (!txs) {
+          txs = await fetchTransactionRange(code, months, fetchType);
         if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
       }
       transactions = txs ?? [];
     } else {
-      // 여러 달: 범위 캐시 먼저 확인, 없으면 월별 캐시 활용 후 합산
-      const rangeKey = txRangeCacheKey(code, months, type);
+      // 여러 달
+      const rangeKey = txRangeCacheKey(code, months, fetchType);
       const rangeCached = cache.get<Transaction[]>(rangeKey);
       if (rangeCached) {
         transactions = rangeCached;
       } else {
-        // 월별로 캐시 히트 최대화
         const txArrays = await Promise.all(
           months.map(async ym => {
-            const key = txCacheKey(code, ym, type);
+            const key = txCacheKey(code, ym, fetchType);
             let txs = cache.get<Transaction[]>(key);
             if (!txs) {
-              txs = await fetchTransactionRange(code, [ym], type);
+              txs = await fetchTransactionRange(code, [ym], fetchType);
               if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
             }
             return txs ?? [];
@@ -67,6 +67,11 @@ router.get('/', async (req: Request, res: Response) => {
         transactions = txArrays.flat();
         if (transactions.length > 0) cache.set(rangeKey, transactions, TTL.TRANSACTION);
       }
+    }
+
+    // monthly 필터
+    if (dealType === 'monthly') {
+      transactions = transactions.filter(t => t.dealType === 'monthly');
     }
 
     // 단지명 필터

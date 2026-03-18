@@ -19,11 +19,7 @@
  *   → 외부 API 호출 횟수를 최소화
  */
 import { Router, type Request, type Response } from 'express';
-import {
-  fetchSaleTransactions,
-  aggregateByComplex,
-  getRecentMonths,
-} from '../services/rebTransactions.js';
+import { fetchSaleTransactions, fetchLeaseTransactions, aggregateByComplex, getRecentMonths,} from '../services/rebTransactions.js';
 import { DISTRICT_CODES, type Transaction } from '../types.js';
 import { cache, TTL, txCacheKey } from '../services/cache.js';
 
@@ -168,27 +164,47 @@ router.get('/', async (_req: Request, res: Response) => {
 
     const recentTx: Record<string, Transaction[]> = {};
     await Promise.allSettled(
-      featuredDistricts.map(async ([districtName, code]) => {
-        // 이미 seoulTxMap에 현재 달 데이터가 있으면 바로 사용
-        let txs = seoulTxMap.get(code) ?? [];
-        if (txs.length < 4) {
-          // fallback: 6개월 범위로 재조회
-          const months6 = getRecentMonths(6);
-          const txArrays = await Promise.all(
-            months6.map(async ym => {
-              const key = txCacheKey(code, ym, 'sale');
-              const cached = cache.get<Transaction[]>(key);
-              if (cached) return cached;
-              const fetched = await fetchSaleTransactions(code, ym);
-              if (fetched.length > 0) cache.set(key, fetched, TTL.TRANSACTION);
-              return fetched;
-            }),
+        featuredDistricts.map(async ([districtName, code]) => {
+          const months = getRecentMonths(2);
+
+          // 매매 데이터
+          let saleTxs = seoulTxMap.get(code) ?? [];
+          if (saleTxs.length < 4) {
+            const months6 = getRecentMonths(6);
+            const txArrays = await Promise.all(
+                months6.map(async ym => {
+                  const key = txCacheKey(code, ym, 'sale');
+                  const cached = cache.get<Transaction[]>(key);
+                  if (cached) return cached;
+                  const fetched = await fetchSaleTransactions(code, ym);
+                  if (fetched.length > 0) cache.set(key, fetched, TTL.TRANSACTION);
+                  return fetched;
+                }),
+            );
+            saleTxs = txArrays.flat();
+          }
+
+          // 전월세 데이터
+          const leaseArrays = await Promise.all(
+              months.map(async ym => {
+                const key = txCacheKey(code, ym, 'lease');
+                const cached = cache.get<Transaction[]>(key);
+                if (cached) return cached;
+                const fetched = await fetchLeaseTransactions(code, ym);
+                if (fetched.length > 0) cache.set(key, fetched, TTL.TRANSACTION);
+                return fetched;
+              }),
           );
-          txs = txArrays.flat();
-        }
-        txs.sort((a, b) => b.dealDate.localeCompare(a.dealDate));
-        recentTx[districtName] = txs.slice(0, 4);
-      }),
+          const leaseTxs = leaseArrays.flat();
+
+          saleTxs.sort((a, b) => b.dealDate.localeCompare(a.dealDate));
+          leaseTxs.sort((a, b) => b.dealDate.localeCompare(a.dealDate));
+
+          recentTx[districtName] = [
+            ...saleTxs.slice(0, 4),
+            ...leaseTxs.slice(0, 4),
+          ];
+        }),
     );
 
     // ── 최종 응답 구성 ────────────────────────────────────────────

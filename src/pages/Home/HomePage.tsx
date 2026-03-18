@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import type { RealTransaction } from '@/services/api';
 import { parseSearchQuery, buildListingsUrl } from '@/utils/search';
+import { formatPrice } from '@/utils/format';
 import { useDashboard } from '@/hooks/useDashboard';
 import TransactionCard from '@/components/listings/TransactionCard';
-import { formatPrice } from '@/utils/format';
 import styles from './HomePage.module.scss';
 
 const REGION_DEFAULT_COUNT = 5;
@@ -17,9 +18,17 @@ function SkeletonRow() {
   return <tr className={styles.skeletonRow} aria-hidden><td colSpan={5}><div className={styles.skeletonLine} /></td></tr>;
 }
 
+function filterByDealType(txs: RealTransaction[] | undefined, tab: 'sale' | 'lease' | 'monthly') {
+  if (!txs) return [];
+  return txs.filter(t => t.dealType === tab).slice(0, 4);
+}
+
 export default function HomePage() {
   const [searchValue, setSearchValue] = useState('');
   const [showAllRegions, setShowAllRegions] = useState(false);
+  const [gangnamTab, setGangnamTab] = useState<'sale' | 'lease' | 'monthly'>('sale');
+  const [mapoTab, setMapoTab] = useState<'sale' | 'lease' | 'monthly'>('sale');
+  const [yongsanTab, setYongsanTab] = useState<'sale' | 'lease' | 'monthly'>('sale');
   const navigate = useNavigate();
 
   // ✅ 단 1번의 API 요청으로 대시보드 전체 데이터 수신
@@ -300,18 +309,29 @@ export default function HomePage() {
           </h2>
           <Link to="/listings?district=서울 강남구" className={styles.seeAll}>더 보기 →</Link>
         </div>
+        <div className={styles.dealTabs}>
+          {(['sale', 'lease', 'monthly'] as const).map(type => (
+              <button
+                  key={type}
+                  className={`${styles.dealTab} ${gangnamTab === type ? styles.dealTabActive : ''}`}
+                  onClick={() => setGangnamTab(type)}
+              >
+                {type === 'sale' ? '매매' : type === 'lease' ? '전세' : '월세'}
+              </button>
+          ))}
+        </div>
         {isLoading ? (
-          <div className={styles.listingGrid}>
-            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        ) : (gangnamTx?.slice(0, 4) ?? []).length > 0 ? (
-          <div className={styles.listingGrid}>
-            {gangnamTx!.slice(0, 4).map((t, idx) => (
-              <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
-            ))}
-          </div>
+            <div className={styles.listingGrid}>
+              {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+        ) : filterByDealType(gangnamTx, gangnamTab).length > 0 ? (
+            <div className={styles.listingGrid}>
+              {filterByDealType(gangnamTx, gangnamTab).map((t, idx) => (
+                  <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
+              ))}
+            </div>
         ) : (
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
         )}
       </section>
 
@@ -319,22 +339,33 @@ export default function HomePage() {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
-            <span className={styles.flashIcon}>🏙️</span> 마포구 최근 실거래
+            <span className={styles.upIcon}>🏙️</span> 마포구 최근 실거래
           </h2>
           <Link to="/listings?district=서울 마포구" className={styles.seeAll}>더 보기 →</Link>
         </div>
+        <div className={styles.dealTabs}>
+          {(['sale', 'lease', 'monthly'] as const).map(type => (
+              <button
+                  key={type}
+                  className={`${styles.dealTab} ${mapoTab === type ? styles.dealTabActive : ''}`}
+                  onClick={() => setMapoTab(type)}
+              >
+                {type === 'sale' ? '매매' : type === 'lease' ? '전세' : '월세'}
+              </button>
+          ))}
+        </div>
         {isLoading ? (
-          <div className={styles.listingGrid}>
-            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        ) : (mapoTx?.slice(0, 4) ?? []).length > 0 ? (
-          <div className={styles.listingGrid}>
-            {mapoTx!.slice(0, 4).map((t, idx) => (
-              <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
-            ))}
-          </div>
+            <div className={styles.listingGrid}>
+              {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+        ) : filterByDealType(mapoTx, mapoTab).length > 0 ? (
+            <div className={styles.listingGrid}>
+              {filterByDealType(mapoTx, mapoTab).map((t, idx) => (
+                  <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
+              ))}
+            </div>
         ) : (
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
         )}
       </section>
 
@@ -342,22 +373,33 @@ export default function HomePage() {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
-            <span className={styles.downIcon}>🏢</span> 용산구 최근 실거래
+            <span className={styles.upIcon}>🏢</span> 용산구 최근 실거래
           </h2>
           <Link to="/listings?district=서울 용산구" className={styles.seeAll}>더 보기 →</Link>
         </div>
+        <div className={styles.dealTabs}>
+          {(['sale', 'lease', 'monthly'] as const).map(type => (
+              <button
+                  key={type}
+                  className={`${styles.dealTab} ${yongsanTab === type ? styles.dealTabActive : ''}`}
+                  onClick={() => setYongsanTab(type)}
+              >
+                {type === 'sale' ? '매매' : type === 'lease' ? '전세' : '월세'}
+              </button>
+          ))}
+        </div>
         {isLoading ? (
-          <div className={styles.listingGrid}>
-            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        ) : (yongsanTx?.slice(0, 4) ?? []).length > 0 ? (
-          <div className={styles.listingGrid}>
-            {yongsanTx!.slice(0, 4).map((t, idx) => (
-              <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
-            ))}
-          </div>
+            <div className={styles.listingGrid}>
+              {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+        ) : filterByDealType(yongsanTx, yongsanTab).length > 0 ? (
+            <div className={styles.listingGrid}>
+              {filterByDealType(yongsanTx, yongsanTab).map((t, idx) => (
+                  <TransactionCard key={`${t.id}_${idx}`} transaction={t} />
+              ))}
+            </div>
         ) : (
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
         )}
       </section>
     </div>
