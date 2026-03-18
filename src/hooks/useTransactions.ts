@@ -47,7 +47,8 @@ export function useTransactions(params: {
     queryKey: txKeys.list(queryParams),
     queryFn: () => api.getTransactions(queryParams),
     enabled: enabled && hasLocation,
-    staleTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 60 * 6,
+    gcTime:    1000 * 60 * 60 * 12,
     refetchOnWindowFocus: false,
     retry: 1,
   });

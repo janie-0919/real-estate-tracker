@@ -10,6 +10,7 @@ import dashboardRouter from './routes/dashboard.js';
 import { cache, TTL } from './services/cache.js';
 import { fetchTransactionRange, getRecentMonths } from './services/rebTransactions.js';
 import { DISTRICT_CODES } from './types.js';
+import { txCacheKey } from './services/cache.js';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -57,15 +58,15 @@ app.use('/api', (_req: Request, _res: Response, next: NextFunction) => {
 async function warmupSeoulCache() {
   const seoulDistricts = Object.entries(DISTRICT_CODES)
       .filter(([name]) => name.startsWith('서울 '));
-  const months = getRecentMonths(1);
+  const [currentMonth] = getRecentMonths(1);
 
   console.log(`[Cache] 서울 ${seoulDistricts.length}개 구 워밍 시작...`);
   let loaded = 0;
   await Promise.allSettled(
       seoulDistricts.map(async ([, code]) => {
-        const key = `tx:${code}:${months.join('-')}:sale`;
-        if (cache.get(key)) return; // 이미 캐시됨
-        const txs = await fetchTransactionRange(code, months, 'sale');
+        const key = txCacheKey(code, currentMonth, 'sale');
+        if (cache.get(key)) return;
+        const txs = await fetchTransactionRange(code, [currentMonth], 'sale');
         if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
         loaded++;
       })
