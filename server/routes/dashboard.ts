@@ -171,7 +171,7 @@ router.get('/', async (_req: Request, res: Response) => {
       featuredDistricts.map(async ([districtName, code]) => {
         // 이미 seoulTxMap에 현재 달 데이터가 있으면 바로 사용
         let txs = seoulTxMap.get(code) ?? [];
-        if (txs.length === 0) {
+        if (txs.length < 4) {
           // fallback: 6개월 범위로 재조회
           const months6 = getRecentMonths(6);
           const txArrays = await Promise.all(
