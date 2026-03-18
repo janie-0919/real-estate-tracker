@@ -117,6 +117,34 @@
   }
 }
 
+// 시도 탭
+.sidoTabs {
+  @include flex(row, flex-start, center, $spacing-1);
+  flex-wrap: wrap;
+  gap: $spacing-1;
+  padding-bottom: $spacing-2;
+  border-bottom: 1px solid $color-border;
+  margin-bottom: $spacing-2;
+}
+
+.sidoTab {
+  @include button-reset;
+  padding: $spacing-1 $spacing-2;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-fast;
+
+  &:hover { background: $color-gray-100; color: $color-text-primary; }
+  &.sidoTabActive { background: $color-primary-600; color: #fff; font-weight: $font-weight-medium; }
+}
+
+.districtCount {
+  font-size: $font-size-xs;
+  color: $color-primary-700;
+  margin-top: $spacing-1;
+}
+
 .chipGroup {
   @include flex(row, flex-start, center, $spacing-2);
   flex-wrap: wrap;

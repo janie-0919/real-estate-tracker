@@ -5,11 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { formatDate } from '@/utils/format';
-import { SEOUL_DISTRICT_NAMES } from '@/data/districts';
+import { ALL_REGIONS } from '@/data/districts';
 import styles from './AlertsPage.module.scss';
 import { useAlerts } from '@/hooks/useAlerts';
-
-const DISTRICTS = SEOUL_DISTRICT_NAMES;
 
 const defaultForm: Omit<AlertCondition, 'id' | 'createdAt'> = {
   name: '',
@@ -85,6 +83,7 @@ export default function AlertsPage() {
   const location = useLocation();
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({ ...defaultForm });
+  const [selectedSido, setSelectedSido] = useState(ALL_REGIONS[0].sido);
 
   const { alerts, isLoading, addAlert, toggleAlert, deleteAlert } = useAlerts();
 
@@ -160,18 +159,35 @@ export default function AlertsPage() {
 
             <div className={styles.formGroup}>
               <label className={styles.label}>관심 지역 *</label>
-              <div className={styles.chipGroup}>
-                {DISTRICTS.map(d => (
+              {/* 시도 탭 */}
+              <div className={styles.sidoTabs}>
+                {ALL_REGIONS.map(r => (
                   <button
-                    key={d}
+                    key={r.sido}
                     type="button"
-                    className={`${styles.chip} ${form.districts.includes(d) ? styles.chipActive : ''}`}
-                    onClick={() => toggleDistrict(d)}
+                    className={`${styles.sidoTab} ${selectedSido === r.sido ? styles.sidoTabActive : ''}`}
+                    onClick={() => setSelectedSido(r.sido)}
                   >
-                    {d.replace('서울 ', '')}
+                    {r.sido}
                   </button>
                 ))}
               </div>
+              {/* 구/시 칩 */}
+              <div className={styles.chipGroup}>
+                {ALL_REGIONS.find(r => r.sido === selectedSido)?.districts.map(d => (
+                  <button
+                    key={d.name}
+                    type="button"
+                    className={`${styles.chip} ${form.districts.includes(d.name) ? styles.chipActive : ''}`}
+                    onClick={() => toggleDistrict(d.name)}
+                  >
+                    {d.name.replace(`${selectedSido} `, '')}
+                  </button>
+                ))}
+              </div>
+              {form.districts.length > 0 && (
+                <p className={styles.districtCount}>선택된 지역: {form.districts.length}개</p>
+              )}
             </div>
 
             <div className={styles.formGroup}>
