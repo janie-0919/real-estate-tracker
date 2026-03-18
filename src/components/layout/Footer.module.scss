@@ -1,0 +1,15 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/mixins' as *;
+
+.footer {
+  text-align: center;
+  padding: $spacing-4;
+  color: #9ca3af;
+  font-size: $font-size-xs;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 3rem;
+
+  span {
+    color: $color-text-primary;
+  }
+}
