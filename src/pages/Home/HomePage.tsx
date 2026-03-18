@@ -206,6 +206,42 @@ export default function HomePage() {
               </tbody>
             </table>
           )}
+
+          {/* 모바일 카드 리스트 */}
+          <div className={styles.regionCardList}>
+            {(showAllRegions
+                    ? districtSummary ?? []
+                    : (districtSummary ?? []).slice(0, REGION_DEFAULT_COUNT)
+            ).map(r => (
+                <div key={r.district} className={styles.regionCard}>
+                  <Link
+                      to={`/listings?district=${encodeURIComponent(r.district)}`}
+                      className={styles.regionCardName}
+                  >
+                    {r.district}
+                  </Link>
+                  <div className={styles.regionCardStats}>
+                    <div className={styles.regionCardStat}>
+                      <span className={styles.regionCardStatLabel}>거래 건수</span>
+                      <span className={styles.regionCardStatValue}>{r.count > 0 ? `${r.count}건` : '-'}</span>
+                    </div>
+                    <div className={styles.regionCardStat}>
+                      <span className={styles.regionCardStatLabel}>평균 실거래가</span>
+                      <span className={styles.regionCardStatValue}>{r.avgPrice > 0 ? formatPrice(r.avgPrice) : '-'}</span>
+                    </div>
+                    <div className={styles.regionCardStat}>
+                      <span className={styles.regionCardStatLabel}>최저가</span>
+                      <span className={styles.regionCardStatValue}>{r.minPrice > 0 ? formatPrice(r.minPrice) : '-'}</span>
+                    </div>
+                    <div className={styles.regionCardStat}>
+                      <span className={styles.regionCardStatLabel}>최고가</span>
+                      <span className={styles.regionCardStatValue}>{r.maxPrice > 0 ? formatPrice(r.maxPrice) : '-'}</span>
+                    </div>
+                  </div>
+                </div>
+            ))}
+          </div>
+
           {(districtSummary ?? []).length > REGION_DEFAULT_COUNT && (
             <button
               className={styles.showMoreBtn}

@@ -66,6 +66,14 @@
   padding: $spacing-1 $spacing-1 $spacing-1 $spacing-4;
   gap: $spacing-3;
 
+  @media (max-width: #{$bp-sm}) {
+    gap: $spacing-1;
+
+    svg {
+      display: none;
+    }
+  }
+
   svg {
     color: $color-gray-400;
     flex-shrink: 0;
@@ -73,6 +81,7 @@
 
   input {
     flex: 1;
+    min-width: 0;
     border: none;
     outline: none;
     font-size: $font-size-base;
@@ -82,11 +91,16 @@
     &::placeholder {
       color: $color-text-secondary;
       font-size: $font-size-md;
+
+      @media (max-width: #{$bp-sm}) {
+        font-size: $font-size-sm;
+      }
     }
   }
 
   button {
     @include button-reset;
+    flex-shrink: 0;
     padding: $spacing-2 $spacing-6;
     background: $color-primary-600;
     color: white;
@@ -97,6 +111,10 @@
 
     &:hover {
       background: $color-primary-700;
+    }
+
+    @media (max-width: #{$bp-sm}) {
+      padding: $spacing-2 $spacing-3;
     }
   }
 }
@@ -174,7 +192,7 @@
 
 .statCard {
   @include card;
-  padding: $spacing-4 $spacing-5;
+  padding: $spacing-4;
   border-top: 3px solid $color-primary-400;
   transition: box-shadow $transition-fast, transform $transition-fast;
 
@@ -212,7 +230,7 @@
   margin-bottom: $spacing-2;
 
   @media (max-width: #{$bp-sm}) {
-    font-size: $font-size-xs;
+    font-size: $font-size-sm;
   }
 }
 
@@ -243,6 +261,10 @@
   table {
     width: 100%;
     border-collapse: collapse;
+
+    @media (max-width: #{$bp-md}) {
+      display: none;
+    }
 
     th {
       padding: $spacing-3 $spacing-4;
@@ -275,6 +297,55 @@
       background: $color-gray-50;
     }
   }
+}
+
+// 모바일 카드 리스트
+.regionCardList {
+  display: none;
+
+  @media (max-width: #{$bp-md}) {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.regionCard {
+  padding: $spacing-3 $spacing-4;
+  border-bottom: 1px solid $color-gray-50;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.regionCardName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-600;
+  margin-bottom: $spacing-2;
+}
+
+.regionCardStats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-1 $spacing-4;
+}
+
+.regionCardStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.regionCardStatLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.regionCardStatValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
 }
 
 .showMoreBtn {
