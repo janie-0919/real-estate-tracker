@@ -15,6 +15,10 @@
   position: relative;
   overflow: hidden;
 
+  @media (max-width: #{$bp-md}) {
+    padding: $spacing-6;
+  }
+
   &::before {
     content: '';
     position: absolute;

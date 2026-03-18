@@ -73,7 +73,7 @@ export default function Header() {
               <div className={styles.authSkeleton} />
             ) : user ? (
               <div className={styles.userArea}>
-                <span className={styles.userName}><strong>{displayName}</strong>님, 안녕하세요!</span>
+                <span className={styles.userName}><strong>{displayName}</strong> 님, 안녕하세요!</span>
                 <button className={styles.logoutBtn} onClick={handleSignOut}>로그아웃</button>
               </div>
             ) : (
@@ -119,6 +119,7 @@ export default function Header() {
               onChange={e => setSearchValue(e.target.value)}
               className={styles.searchInput}
             />
+            <button type="submit">검색</button>
           </div>
         </form>
 
@@ -187,7 +188,7 @@ export default function Header() {
             <div className={styles.authSkeleton} style={{ width: '100%', height: '40px' }} />
           ) : user ? (
             <>
-              <span className={styles.drawerUserName}>{displayName}님</span>
+              <span className={styles.drawerUserName}><strong>{displayName}</strong> 님, 안녕하세요!</span>
               <button className={styles.drawerLogoutBtn} onClick={handleSignOut}>로그아웃</button>
             </>
           ) : (

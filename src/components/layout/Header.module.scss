@@ -46,7 +46,7 @@
 .searchForm {
   flex: 1;
   max-width: 480px;
-  margin: 0 $spacing-4;
+  margin-left: auto;
 
   @media (max-width: #{$bp-sm}) {
     display: none;
@@ -258,10 +258,45 @@
   width: 100%;
 
   .searchBox {
-    position: relative;
+    @include flex(row, flex-start, center);
+    background: $color-gray-50;
+    border: 1px solid $color-border;
+    border-radius: $radius-full;
+    padding: $spacing-1 $spacing-1 $spacing-1 $spacing-3;
+    gap: $spacing-2;
 
-    @media (max-width: #{$bp-md}) {
-      display: block;
+    input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: $font-size-md;
+      color: $color-text-primary;
+
+      &::placeholder {
+        color: $color-text-secondary;
+      }
+
+      &:focus, &:focus-visible {
+        box-shadow: none;
+      }
+    }
+
+    button {
+      @include button-reset;
+      flex-shrink: 0;
+      padding: $spacing-2 $spacing-4;
+      background: $color-primary-600;
+      color: white;
+      border-radius: $radius-full;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      transition: background $transition-fast;
+
+      &:hover {
+        background: $color-primary-700;
+      }
     }
   }
 }
@@ -298,8 +333,12 @@
 
 .drawerUserName {
   font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-primary;
+  color: $color-text-secondary;
+
+  strong {
+    color: $color-text-primary;
+    font-weight: $font-weight-medium;
+  }
 }
 
 .drawerLogoutBtn {
