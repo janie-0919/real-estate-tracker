@@ -5,6 +5,7 @@
   display: block;
   text-decoration: none;
   color: inherit;
+  min-width: 0;
 
   &:hover .card {
     box-shadow: $shadow-md;
