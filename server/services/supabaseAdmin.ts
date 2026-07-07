@@ -9,13 +9,20 @@
  * null을 반환해 호출부에서 안전하게 폴백(라이브 계산)하도록 한다.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import ws from 'ws';
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Node 20에는 네이티브 WebSocket이 없어 supabase-js의 Realtime 초기화가 실패한다.
+// 이 서버는 Realtime을 쓰지 않지만, 클라이언트 생성 자체가 WebSocket 생성자를
+// 요구하므로 ws 패키지를 transport로 넘겨 크래시를 막는다.
 export const supabaseAdmin: SupabaseClient | null =
   supabaseUrl && serviceRoleKey
-    ? createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
+    ? createClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false },
+        realtime: { transport: ws as unknown as never },
+      })
     : null;
 
 if (!supabaseAdmin) {
