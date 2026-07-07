@@ -10,6 +10,33 @@ import { fetchSaleTransactions, fetchLeaseTransactions, aggregateByComplex, getR
 import { DISTRICT_CODES, type Transaction } from '../types.js';
 import { cache, TTL, txCacheKey } from './cache.js';
 
+// data.go.kr는 짧은 시간에 요청이 몰리면 429(Too Many Requests)로 막는다.
+// 249개 지역을 통째로 병렬 호출하면 대부분 429를 맞고, 그 부하로 인해
+// 이후 요청들이 간헐적으로 연결 오류(reject)까지 나던 문제가 있어
+// 동시 처리 지역 수를 제한해서 순차적으로 소화한다.
+const API_CONCURRENCY = 8;
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < items.length) {
+      const i = cursor++;
+      try {
+        results[i] = { status: 'fulfilled', value: await fn(items[i]) };
+      } catch (reason) {
+        results[i] = { status: 'rejected', reason };
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 export interface DashboardData {
   districtSummary: Array<{ district: string; count: number; avgPrice: number; maxPrice: number; minPrice: number }>;
   topComplexes: Array<{
@@ -44,8 +71,10 @@ export async function computeDashboardData(): Promise<DashboardData> {
   // ── STEP 1: 서울 25개 구 × 최근 2달 실거래 병렬 수집 ─────────
   const seoulTxMap = new Map<string, Transaction[]>();
 
-  await Promise.allSettled(
-    seoulEntries.map(async ([, code]) => {
+  await mapWithConcurrency(
+    seoulEntries,
+    API_CONCURRENCY,
+    async ([, code]) => {
       const [curTxs, prevTxs] = await Promise.all([
         (async () => {
           const key = txCacheKey(code, currentMonth, 'sale');
@@ -67,7 +96,7 @@ export async function computeDashboardData(): Promise<DashboardData> {
         })(),
       ]);
       seoulTxMap.set(code, curTxs.length > 0 ? curTxs : prevTxs);
-    }),
+    },
   );
 
   // ── STEP 2: 서울 구별 요약 집계 ──────────────────────────────
@@ -103,8 +132,10 @@ export async function computeDashboardData(): Promise<DashboardData> {
 
   if (!nationalStats) {
     const allEntries = Object.entries(DISTRICT_CODES);
-    const natResults = await Promise.allSettled(
-      allEntries.map(async ([districtName, code]) => {
+    const natResults = await mapWithConcurrency(
+      allEntries,
+      API_CONCURRENCY,
+      async ([districtName, code]) => {
         const txArrays = await Promise.all(
           [currentMonth, prevMonth].map(async ym => {
             const key = txCacheKey(code, ym, 'sale');
@@ -118,7 +149,7 @@ export async function computeDashboardData(): Promise<DashboardData> {
         );
         const txs = txArrays.flat();
         return { district: districtName, count: txs.length, prices: txs.map(t => t.price) };
-      }),
+      },
     );
     const byDistrict = natResults
       .filter((r): r is PromiseFulfilledResult<{ district: string; count: number; prices: number[] }> => r.status === 'fulfilled')
@@ -145,7 +176,7 @@ export async function computeDashboardData(): Promise<DashboardData> {
   ];
 
   const recentTx: Record<string, Transaction[]> = {};
-  await Promise.allSettled(
+  const recentTxResults = await Promise.allSettled(
     featuredDistricts.map(async ([districtName, code]) => {
       const months = getRecentMonths(2);
 
@@ -186,6 +217,11 @@ export async function computeDashboardData(): Promise<DashboardData> {
       ];
     }),
   );
+  recentTxResults.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      console.error(`[computeDashboardData] recentTx 수집 실패 - ${featuredDistricts[i][0]}:`, r.reason);
+    }
+  });
 
   return { districtSummary, topComplexes, nationalStats, recentTx };
 }
