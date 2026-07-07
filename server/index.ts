@@ -7,6 +7,7 @@ import listingRouter from './routes/listings.js';
 import priceIndexRouter from './routes/priceIndex.js';
 import rebMarketRouter from './routes/rebMarket.js';
 import dashboardRouter from './routes/dashboard.js';
+import cronRouter from './routes/cron.js';
 import { cache, TTL } from './services/cache.js';
 import { fetchTransactionRange, getRecentMonths } from './services/rebTransactions.js';
 import { DISTRICT_CODES } from './types.js';
@@ -30,6 +31,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // ── Routes ────────────────────────────────────────────────────────
 app.use('/api/dashboard', dashboardRouter);   // ✅ 대시보드 통합 API (단일 요청)
+app.use('/api/cron', cronRouter);             // 외부 스케줄러 전용 백그라운드 갱신
 app.use('/api/transactions', transactionRouter);
 app.use('/api/listings', listingRouter);
 app.use('/api/price-index', priceIndexRouter);

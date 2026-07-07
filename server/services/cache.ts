@@ -45,6 +45,7 @@ export const TTL = {
   TRANSACTION: 1000 * 60 * 60 * 6,   // 실거래가: 6시간
   LISTING:     1000 * 60 * 30,         // 매물목록: 30분
   DISTRICT:    1000 * 60 * 60 * 24,   // 지역통계: 24시간
+  MASTER:      1000 * 60 * 60,        // 대시보드 통합 응답: 1시간
 } as const;
 
 /**

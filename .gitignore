@@ -7,5 +7,4 @@ dist-ssr
 .env.*.local
 .env.production
 .vercel
-/.claude/worktrees/eloquent-brahmagupta/.claude/settings.local.json
-/.idea/codeStyles/codeStyleConfig.xml
+/.claude/

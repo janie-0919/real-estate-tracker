@@ -3,224 +3,75 @@
  *
  * GET /api/dashboard
  *
- * 기존에 프론트에서 7개의 개별 요청으로 처리하던 것을
- * 단 1번의 요청으로 모든 대시보드 데이터를 반환합니다.
- *
- * 포함 데이터:
- *   - districtSummary  : 서울 25개 구별 실거래 요약
- *   - topComplexes     : 서울 최고가 단지 TOP 4
- *   - nationalStats    : 전국 실거래 요약
- *   - recentTx         : 강남·마포·용산 최근 실거래 (각 4건)
- *
- * ✅ 성능 전략:
- *   1. 서울 25개 구 실거래를 먼저 병렬 수집 (fetchSaleTransactions × 25)
- *   2. 수집한 데이터를 공유 캐시(tx:{code}:{ym}:sale)에 저장
- *   3. topComplexes / nationalStats / recentTx 는 캐시 히트로 즉시 집계
- *   → 외부 API 호출 횟수를 최소화
+ * ✅ 성능 전략 (2026-07 개편):
+ *   이전에는 요청이 들어올 때마다 공공 API를 직접 스캔했기 때문에
+ *   서버리스 콜드스타트 시 캐시가 비어 있으면 최대 40초까지 걸렸다.
+ *   지금은 사용자 요청 경로에서 외부 API를 직접 호출하지 않는다:
+ *     1. 인메모리 캐시 확인 (같은 컨테이너가 살아있는 동안 즉시 응답)
+ *     2. Supabase에 영속 저장된 최신 집계 결과 조회 (콜드스타트에도 생존, 보통 수백 ms)
+ *     3. 위 두 곳 모두 비어있는 최초 1회에 한해서만 라이브 계산 + 저장
+ *   실제 집계 계산은 server/services/dashboardAggregator.ts 로 분리했고,
+ *   그 계산은 /api/cron/refresh-dashboard 를 통해 외부 스케줄러(예: GitHub Actions)가
+ *   주기적으로 미리 실행해 Supabase를 갱신해둔다.
  */
 import { Router, type Request, type Response } from 'express';
-import { fetchSaleTransactions, fetchLeaseTransactions, aggregateByComplex, getRecentMonths,} from '../services/rebTransactions.js';
-import { DISTRICT_CODES, type Transaction } from '../types.js';
-import { cache, TTL, txCacheKey } from '../services/cache.js';
+import { computeDashboardData, type DashboardData } from '../services/dashboardAggregator.js';
+import { cache, TTL } from '../services/cache.js';
+import { supabaseAdmin, DASHBOARD_CACHE_TABLE } from '../services/supabaseAdmin.js';
 
 const router = Router();
 
-/** 서울 구별 요약 계산 */
-function calcDistrictSummary(txs: Transaction[], district: string) {
-  if (txs.length === 0) return { district, count: 0, avgPrice: 0, maxPrice: 0, minPrice: 0 };
-  const prices = txs.map(t => t.price);
-  return {
-    district,
-    count: txs.length,
-    avgPrice: Math.round(prices.reduce((s, p) => s + p, 0) / prices.length),
-    maxPrice: Math.max(...prices),
-    minPrice: Math.min(...prices),
-  };
-}
+const MASTER_KEY = 'dashboard:v1';
+
+// Vercel Edge에서 응답을 캐싱해 서버리스 함수의 인메모리 캐시가 콜드스타트로
+// 날아가도 외부 API를 다시 두드리지 않도록 함.
+// s-maxage: 1시간 동안은 Edge가 즉시 응답. 그 이후에도 stale-while-revalidate
+// 기간(24시간) 동안은 예전 데이터를 즉시 내려주고 백그라운드에서 갱신.
+const DASHBOARD_CACHE_CONTROL = 'public, s-maxage=3600, stale-while-revalidate=86400';
 
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    // ── 전체 결과 캐시 확인 ───────────────────────────────────────
-    const masterKey = 'dashboard:v1';
-    const masterCached = cache.get<unknown>(masterKey);
-    if (masterCached) {
-      return res.json({ success: true, data: masterCached, cached: true });
+    // ── 1) 인메모리 캐시 (같은 컨테이너가 살아있는 동안 가장 빠름) ──
+    const memCached = cache.get<DashboardData>(MASTER_KEY);
+    if (memCached) {
+      res.set('Cache-Control', DASHBOARD_CACHE_CONTROL);
+      return res.json({ success: true, data: memCached, cached: true, source: 'memory' });
     }
 
-    const [currentMonth, prevMonth] = getRecentMonths(2);
-    const seoulEntries = Object.entries(DISTRICT_CODES).filter(([name]) => name.startsWith('서울 '));
+    // ── 2) Supabase 영속 캐시 (콜드스타트에도 생존) ──────────────
+    if (supabaseAdmin) {
+      const { data: row, error } = await supabaseAdmin
+        .from(DASHBOARD_CACHE_TABLE)
+        .select('data, updated_at')
+        .eq('key', MASTER_KEY)
+        .maybeSingle();
 
-    // ── STEP 1: 서울 25개 구 × 최근 2달 실거래 병렬 수집 ─────────
-    // 이미 캐시에 있는 구/달은 즉시 반환, 없는 것만 API 호출
-    const seoulTxMap = new Map<string, Transaction[]>(); // code → txs
-
-    await Promise.allSettled(
-      seoulEntries.map(async ([, code]) => {
-        const [curTxs, prevTxs] = await Promise.all([
-          (async () => {
-            const key = txCacheKey(code, currentMonth, 'sale');
-            let txs = cache.get<Transaction[]>(key);
-            if (!txs) {
-              txs = await fetchSaleTransactions(code, currentMonth);
-              if (txs.length > 0) cache.set(key, txs, TTL.DISTRICT);
-            }
-            return txs ?? [];
-          })(),
-          (async () => {
-            const key = txCacheKey(code, prevMonth, 'sale');
-            let txs = cache.get<Transaction[]>(key);
-            if (!txs) {
-              txs = await fetchSaleTransactions(code, prevMonth);
-              if (txs.length > 0) cache.set(key, txs, TTL.DISTRICT);
-            }
-            return txs ?? [];
-          })(),
-        ]);
-        // 이번 달 우선, 없으면 전달
-        seoulTxMap.set(code, curTxs.length > 0 ? curTxs : prevTxs);
-      }),
-    );
-
-    // ── STEP 2: 서울 구별 요약 집계 ──────────────────────────────
-    const districtSummary = seoulEntries.map(([districtName, code]) =>
-      calcDistrictSummary(seoulTxMap.get(code) ?? [], districtName),
-    );
-
-    // ── STEP 3: 서울 최고가 단지 TOP 4 ───────────────────────────
-    const allSeoulComplexes: Array<{
-      complexName: string; neighborhood: string; district: string;
-      avgPrice: number; minPrice: number; maxPrice: number;
-      transactionCount: number; recentTransactions: Transaction[];
-    }> = [];
-
-    for (const [districtName, code] of seoulEntries) {
-      const txs = seoulTxMap.get(code) ?? [];
-      if (txs.length === 0) continue;
-      const stats = aggregateByComplex(txs);
-      for (const s of stats.values()) {
-        allSeoulComplexes.push({
-          complexName: s.complexName,
-          neighborhood: s.neighborhood,
-          district: districtName,
-          avgPrice: s.avgPrice,
-          minPrice: s.minPrice,
-          maxPrice: s.maxPrice,
-          transactionCount: s.transactions.length,
-          recentTransactions: s.transactions.slice(0, 3),
-        });
+      if (error) {
+        console.error('[/api/dashboard] Supabase 조회 실패', error);
+      } else if (row) {
+        cache.set(MASTER_KEY, row.data, TTL.MASTER);
+        res.set('Cache-Control', DASHBOARD_CACHE_CONTROL);
+        return res.json({ success: true, data: row.data, cached: true, source: 'db', updatedAt: row.updated_at });
       }
     }
-    const topComplexes = allSeoulComplexes.sort((a, b) => b.maxPrice - a.maxPrice).slice(0, 4);
 
-    // ── STEP 4: 전국 통계 (캐시 히트 기대, 없으면 전국 병렬 수집) ─
-    const nationalCacheKey = 'national-stats:latest';
-    let nationalStats = cache.get<{
-      totalCount: number; avgPrice: number; maxPrice: number;
-      topDistrict: { district: string; count: number } | null;
-    }>(nationalCacheKey);
-
-    if (!nationalStats) {
-      const allEntries = Object.entries(DISTRICT_CODES);
-      const natResults = await Promise.allSettled(
-        allEntries.map(async ([districtName, code]) => {
-          const txArrays = await Promise.all(
-            [currentMonth, prevMonth].map(async ym => {
-              const key = txCacheKey(code, ym, 'sale');
-              let txs = cache.get<Transaction[]>(key);
-              if (!txs) {
-                txs = await fetchSaleTransactions(code, ym);
-                if (txs.length > 0) cache.set(key, txs, TTL.TRANSACTION);
-              }
-              return txs ?? [];
-            }),
-          );
-          const txs = txArrays.flat();
-          return { district: districtName, count: txs.length, prices: txs.map(t => t.price) };
-        }),
-      );
-      const byDistrict = natResults
-        .filter((r): r is PromiseFulfilledResult<{ district: string; count: number; prices: number[] }> => r.status === 'fulfilled')
-        .map(r => r.value);
-
-      const totalCount = byDistrict.reduce((s, d) => s + d.count, 0);
-      const allPrices = byDistrict.flatMap(d => d.prices);
-      const topByVolume = byDistrict.filter(d => d.count > 0).sort((a, b) => b.count - a.count)[0] ?? null;
-
-      nationalStats = {
-        totalCount,
-        avgPrice: allPrices.length ? Math.round(allPrices.reduce((s, p) => s + p, 0) / allPrices.length) : 0,
-        maxPrice: allPrices.length ? Math.max(...allPrices) : 0,
-        topDistrict: topByVolume ? { district: topByVolume.district, count: topByVolume.count } : null,
-      };
-      if (totalCount > 0) cache.set(nationalCacheKey, nationalStats, TTL.DISTRICT);
+    // ── 3) 최초 1회 라이브 계산 (여기서만 외부 API를 두드림) ─────
+    console.warn('[/api/dashboard] 캐시 미스 — 라이브 계산 수행 (느릴 수 있음)');
+    const data = await computeDashboardData();
+    cache.set(MASTER_KEY, data, TTL.MASTER);
+    if (supabaseAdmin) {
+      const { error } = await supabaseAdmin
+        .from(DASHBOARD_CACHE_TABLE)
+        .upsert({ key: MASTER_KEY, data, updated_at: new Date().toISOString() });
+      if (error) console.error('[/api/dashboard] Supabase 저장 실패', error);
     }
 
-    // ── STEP 5: 강남·마포·용산 최근 실거래 (캐시 히트) ─────────
-    const featuredDistricts: [string, string][] = [
-      ['서울 강남구', DISTRICT_CODES['서울 강남구']],
-      ['서울 마포구', DISTRICT_CODES['서울 마포구']],
-      ['서울 용산구', DISTRICT_CODES['서울 용산구']],
-    ];
-
-    const recentTx: Record<string, Transaction[]> = {};
-    await Promise.allSettled(
-        featuredDistricts.map(async ([districtName, code]) => {
-          const months = getRecentMonths(2);
-
-          // 매매 데이터
-          let saleTxs = seoulTxMap.get(code) ?? [];
-          if (saleTxs.length < 4) {
-            const months6 = getRecentMonths(6);
-            const txArrays = await Promise.all(
-                months6.map(async ym => {
-                  const key = txCacheKey(code, ym, 'sale');
-                  const cached = cache.get<Transaction[]>(key);
-                  if (cached) return cached;
-                  const fetched = await fetchSaleTransactions(code, ym);
-                  if (fetched.length > 0) cache.set(key, fetched, TTL.TRANSACTION);
-                  return fetched;
-                }),
-            );
-            saleTxs = txArrays.flat();
-          }
-
-          // 전월세 데이터
-          const leaseArrays = await Promise.all(
-              months.map(async ym => {
-                const key = txCacheKey(code, ym, 'lease');
-                const cached = cache.get<Transaction[]>(key);
-                if (cached) return cached;
-                const fetched = await fetchLeaseTransactions(code, ym);
-                if (fetched.length > 0) cache.set(key, fetched, TTL.TRANSACTION);
-                return fetched;
-              }),
-          );
-          const leaseTxs = leaseArrays.flat();
-
-          saleTxs.sort((a, b) => b.dealDate.localeCompare(a.dealDate));
-          leaseTxs.sort((a, b) => b.dealDate.localeCompare(a.dealDate));
-
-          recentTx[districtName] = [
-            ...saleTxs.slice(0, 4),
-            ...leaseTxs.slice(0, 4),
-          ];
-        }),
-    );
-
-    // ── 최종 응답 구성 ────────────────────────────────────────────
-    const data = {
-      districtSummary,
-      topComplexes,
-      nationalStats,
-      recentTx,
-    };
-
-    // 대시보드 결과 전체를 1시간 캐시 (공유 캐시 워밍 후에는 즉시 반환)
-    cache.set(masterKey, data, 1000 * 60 * 60);
-
-    return res.json({ success: true, data, cached: false });
+    res.set('Cache-Control', DASHBOARD_CACHE_CONTROL);
+    return res.json({ success: true, data, cached: false, source: 'live' });
   } catch (err) {
     console.error('[/api/dashboard]', err);
+    // 실패 응답은 Edge에 캐싱되지 않도록 명시
+    res.set('Cache-Control', 'no-store');
     return res.status(500).json({ success: false, error: '대시보드 데이터 조회 실패' });
   }
 });
