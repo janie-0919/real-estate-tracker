@@ -1,7 +1,6 @@
 {
   "version": 2,
   "buildCommand": "npm run vercel-build",
-  "outputDirectory": "dist",
   "functions": {
     "api/index.ts": {
       "memory": 512,
@@ -12,10 +11,6 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
-    },
-    {
-      "source": "/((?!api/|sitemap\\.xml|robots\\.txt).*)",
-      "destination": "/index.html"
     }
   ]
 }
