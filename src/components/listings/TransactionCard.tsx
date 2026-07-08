@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+'use client';
+import { Link } from '@/compat/router';
 import type { RealTransaction } from '@/services/api';
 import { formatPrice, formatDate, formatDealType } from '@/utils/format';
 import Badge from '@/components/ui/Badge';

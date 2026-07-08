@@ -1,5 +1,5 @@
-@use '@/styles/tokens' as *;
-@use '@/styles/mixins' as *;
+@use 'styles/tokens' as *;
+@use 'styles/mixins' as *;
 
 .link {
   display: block;
@@ -57,18 +57,18 @@
 
 .footer {
   @include flex(row, space-between, center);
-  padding-top: $spacing-2;
+  padding-top: $spacing-4;
   border-top: 1px solid $color-border;
   margin-top: $spacing-1;
 }
 
 .source {
   font-size: $font-size-xs;
-  color: $color-text-tertiary;
+  color: $color-text-secondary;
 }
 
 .district {
   font-size: $font-size-xs;
-  color: $color-text-secondary;
+  color: $color-text-primary;
   font-weight: $font-weight-medium;
 }

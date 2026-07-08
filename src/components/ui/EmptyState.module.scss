@@ -1,5 +1,5 @@
-@use '@/styles/tokens' as *;
-@use '@/styles/mixins' as *;
+@use 'styles/tokens' as *;
+@use 'styles/mixins' as *;
 
 .container {
   @include flex(column, center, center, $spacing-4);
@@ -25,7 +25,6 @@
 .description {
   font-size: $font-size-md;
   color: $color-text-secondary;
-  max-width: 360px;
   line-height: $line-height-relaxed;
 }
 

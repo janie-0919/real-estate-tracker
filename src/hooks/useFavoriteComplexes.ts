@@ -13,6 +13,7 @@ const STORAGE_KEY = 'favorite_complexes';
 
 // localStorage 헬퍼
 function loadLocal(): FavoriteComplex[] {
+  if (typeof window === 'undefined') return []; // SSR 가드
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
   } catch {
@@ -21,6 +22,7 @@ function loadLocal(): FavoriteComplex[] {
 }
 
 function saveLocal(items: FavoriteComplex[]) {
+  if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 }
 

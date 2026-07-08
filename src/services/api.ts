@@ -4,8 +4,8 @@
  * 프로덕션: VITE_API_BASE_URL 환경변수에 서버 URL 설정
  */
 
-// 개발 시 VITE_API_BASE_URL을 설정하지 않으면 '/api' 로 fallback → Vite proxy 사용
-const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '/api';
+// NEXT_PUBLIC_API_BASE_URL 미설정 시 '/api' 로 fallback
+const BASE = (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '/api';
 
 class ApiError extends Error {
   constructor(

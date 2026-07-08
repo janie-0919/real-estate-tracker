@@ -1,5 +1,5 @@
-@use '@/styles/tokens' as *;
-@use '@/styles/mixins' as *;
+@use 'styles/tokens' as *;
+@use 'styles/mixins' as *;
 
 .container {
   @include card;
@@ -19,7 +19,7 @@
 .groupLabel {
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
-  color: $color-text-secondary;
+  color: $color-gray-800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -33,7 +33,7 @@
 
 .toggle {
   @include button-reset;
-  padding: $spacing-2 $spacing-3;
+  padding: $spacing-2 $spacing-4;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   color: $color-text-secondary;

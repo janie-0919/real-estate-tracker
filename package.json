@@ -4,34 +4,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "next dev",
+    "dev:vite": "vite",
     "dev:server": "cd server && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
-    "build": "tsc && vite build",
-    "postbuild": "react-snap",
-    "vercel-build": "tsc && vite build",
-    "preview": "vite preview",
+    "build": "next build",
+    "start": "next start",
+    "vercel-build": "next build",
     "server:install": "cd server && npm install",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
-  },
-  "reactSnap": {
-    "source": "dist",
-    "minifyHtml": {
-      "collapseWhitespace": false,
-      "removeComments": false
-    },
-    "crawlLinks": true,
-    "skipThirdPartyRequests": true,
-    "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"],
-    "waitFor": 500,
-    "include": [
-      "/",
-      "/listings",
-      "/auth"
-    ],
-    "exclude": [
-      "/complex-detail"
-    ]
+    "lint": "next lint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
@@ -41,6 +22,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "next": "^14.2.35",
     "node-cron": "^4.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

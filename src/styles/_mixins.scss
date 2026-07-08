@@ -52,10 +52,10 @@
   }
 }
 
+// 공공기관 스타일: 그림자 대신 얇은 보더와 절제된 라운드로 면을 구분
 @mixin card {
   background: $color-bg-surface;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
+  border-radius: $radius-sm;
   border: 1px solid $color-border;
 }
 

@@ -1,16 +1,16 @@
 import { createBrowserRouter } from 'react-router-dom';
 import RootLayout from '@/components/layout/RootLayout';
-import HomePage from '@/pages/Home/HomePage';
-import ListingsPage from '@/pages/Listings/ListingsPage';
-import ListingDetailPage from '@/pages/ListingDetail/ListingDetailPage';
-import ComplexDetailPage from '@/pages/ComplexDetail/ComplexDetailPage';
-import ComplexByNamePage from '@/pages/ComplexDetail/ComplexByNamePage';
-import DistrictsPage from '@/pages/Districts/DistrictsPage';
-import FavoritesPage from '@/pages/Favorites/FavoritesPage';
-import AlertsPage from '@/pages/Alerts/AlertsPage';
-import LoginPage from '@/pages/Login/LoginPage';
-import ResetPasswordPage from '@/pages/ResetPassword/ResetPasswordPage';
-import NotFoundPage from '@/pages/NotFound/NotFoundPage';
+import HomePage from '@/screens/Home/HomePage';
+import ListingsPage from '@/screens/Listings/ListingsPage';
+import ListingDetailPage from '@/screens/ListingDetail/ListingDetailPage';
+import ComplexDetailPage from '@/screens/ComplexDetail/ComplexDetailPage';
+import ComplexByNamePage from '@/screens/ComplexDetail/ComplexByNamePage';
+import DistrictsPage from '@/screens/Districts/DistrictsPage';
+import FavoritesPage from '@/screens/Favorites/FavoritesPage';
+import AlertsPage from '@/screens/Alerts/AlertsPage';
+import LoginPage from '@/screens/Login/LoginPage';
+import ResetPasswordPage from '@/screens/ResetPassword/ResetPasswordPage';
+import NotFoundPage from '@/screens/NotFound/NotFoundPage';
 
 export const router = createBrowserRouter([
   {

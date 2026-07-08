@@ -1,5 +1,6 @@
+'use client';
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from '@/compat/router';
 import { parseSearchQuery, buildListingsUrl } from '@/utils/search';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoriteDistricts } from '@/hooks/useFavoriteDistricts';

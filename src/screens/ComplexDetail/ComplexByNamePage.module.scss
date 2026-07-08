@@ -1,0 +1,315 @@
+@use 'styles/tokens' as *;
+@use 'styles/mixins' as *;
+
+.page {
+  @include flex(column, flex-start, stretch, $spacing-6);
+  padding-bottom: $spacing-12;
+}
+
+.error {
+  padding: $spacing-6;
+  color: $color-danger-600;
+  font-size: $font-size-md;
+}
+
+// ── Breadcrumb ───────────────────────────────────────────────────
+.breadcrumb {
+  @include flex(row, flex-start, center, $spacing-2);
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex-wrap: wrap;
+
+  a {
+    color: $color-primary-600;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// ── Header ────────────────────────────────────────────────────────
+.header {
+  @include flex(row, space-between, flex-start);
+  flex-wrap: wrap;
+  gap: $spacing-3;
+}
+
+.title {
+  @include flex(row, flex-start, center);
+  gap: $spacing-2;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-1;
+}
+
+.address {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.headerActions {
+  @include flex(row, flex-end, center, $spacing-3);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.favBtn {
+  @include button-reset;
+  @include flex(row, flex-start, center, $spacing-2);
+  padding: $spacing-1 $spacing-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-danger-500;
+    color: $color-danger-600;
+    background: $color-danger-50;
+  }
+
+  &.favBtnActive {
+    border-color: $color-danger-500;
+    color: $color-danger-600;
+    background: $color-danger-50;
+  }
+}
+
+.dataLabel {
+  font-size: $font-size-xs;
+  color: $color-primary-600;
+  background: $color-primary-50;
+  padding: 2px $spacing-2;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+// ── Stats ─────────────────────────────────────────────────────────
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-4;
+
+  @media (max-width: #{$bp-md}) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: #{$bp-sm}) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.statCard {
+  @include card;
+  padding: $spacing-4;
+  @include flex(column, flex-start, stretch, $spacing-1);
+}
+
+.statLabel {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.statValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.statSub {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.priceDown { color: $color-price-down; }
+
+// ── Charts ────────────────────────────────────────────────────────
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-5;
+
+  @media (max-width: #{$bp-md}) { grid-template-columns: 1fr; }
+}
+
+.chartCard {
+  @include card;
+  padding: $spacing-5;
+  @include flex(column, flex-start, stretch, $spacing-3);
+}
+
+.chartTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.noData {
+  @include flex-center;
+  height: 160px;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  background: $color-gray-50;
+  border-radius: $radius-md;
+}
+
+// ── Section ───────────────────────────────────────────────────────
+.section {
+  @include flex(column, flex-start, stretch, $spacing-4);
+}
+
+.sectionHeader {
+  @include flex(row, space-between, center);
+  flex-wrap: wrap;
+  gap: $spacing-2;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+}
+
+// 거래유형 필터 버튼
+.dealFilter {
+  @include flex(row, flex-start, center, $spacing-1);
+}
+
+.dealBtn {
+  @include button-reset;
+  padding: $spacing-1 $spacing-3;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-bg-surface;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-primary-300;
+    color: $color-primary-700;
+    background: $color-primary-50;
+  }
+
+  &.active {
+    border-color: $color-primary-600;
+    color: $color-primary-700;
+    background: $color-primary-50;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// ── 데스크톱 테이블 ─────────────────────────────────────────────────
+.tableWrapper {
+  @include card;
+  overflow-x: auto;
+  @include scrollbar-thin;
+
+  @media (max-width: #{$bp-md}) { display: none; }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  th {
+    padding: $spacing-3 $spacing-4;
+    text-align: left;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-gray-800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: $color-gray-50;
+    border-bottom: 1px solid $color-border;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: $spacing-3 $spacing-4;
+    border-bottom: 1px solid $color-gray-100;
+    color: $color-text-primary;
+    white-space: nowrap;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: $color-gray-50; }
+}
+
+.priceCell {
+  font-weight: $font-weight-semibold;
+  color: $color-primary-700;
+}
+
+// ── 모바일 카드 리스트 ───────────────────────────────────────────
+.mobileList {
+  display: none;
+  @include flex(column, flex-start, stretch, $spacing-2);
+
+  @media (max-width: #{$bp-md}) { display: flex; }
+}
+
+.mobileItem {
+  @include card;
+  padding: $spacing-3 $spacing-4;
+  @include flex(column, flex-start, stretch, $spacing-1);
+}
+
+.mobileTop {
+  @include flex(row, space-between, center);
+}
+
+.mobileMeta {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.mobilePrice {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-primary-700;
+}
+
+.mobileDate {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+// ── 페이지네이션 ─────────────────────────────────────────────────
+.pagination {
+  @include flex(row, center, center, $spacing-3);
+}
+
+.pageBtn {
+  @include button-reset;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 $spacing-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $color-primary-300;
+    color: $color-primary-700;
+    background: $color-primary-50;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pageInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.empty {
+  padding: $spacing-6;
+  text-align: center;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}

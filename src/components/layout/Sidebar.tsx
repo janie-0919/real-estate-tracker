@@ -1,5 +1,6 @@
+'use client';
 import { useState } from 'react';
-import { NavLink, Link, useSearchParams, useLocation } from 'react-router-dom';
+import { NavLink, Link, useSearchParams, useLocation } from '@/compat/router';
 import { ALL_REGIONS } from '@/data/districts';
 import { useFavoriteDistricts } from '@/hooks/useFavoriteDistricts';
 import styles from './Sidebar.module.scss';

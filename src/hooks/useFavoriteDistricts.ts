@@ -7,6 +7,7 @@ const STORAGE_KEY = 'favoriteDistricts';
 const DEFAULT_FAVORITES = ['서울 강남구', '서울 서초구', '서울 마포구'];
 
 function loadLocal(): string[] {
+  if (typeof window === 'undefined') return DEFAULT_FAVORITES; // SSR 가드
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw) as string[];
@@ -17,6 +18,7 @@ function loadLocal(): string[] {
 }
 
 function saveLocal(districts: string[]) {
+  if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(districts));
 }
 

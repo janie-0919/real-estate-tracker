@@ -1,0 +1,119 @@
+@use 'styles/tokens' as *;
+@use 'styles/mixins' as *;
+
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  @include flex(row, space-between, center);
+  margin-bottom: $spacing-6;
+  flex-wrap: wrap;
+  gap: $spacing-3;
+}
+
+.title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.sub {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-top: $spacing-1;
+}
+
+.backBtn {
+  font-size: $font-size-md;
+  color: $color-primary-600;
+  text-decoration: none;
+  padding: $spacing-2 $spacing-4;
+  border: 1px solid $color-primary-200;
+  border-radius: $radius-md;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-primary-50;
+  }
+}
+
+.selectedSection {
+  background: $color-primary-50;
+  border: 1px solid $color-primary-100;
+  border-radius: $radius-lg;
+  padding: $spacing-4 $spacing-5;
+  margin-bottom: $spacing-6;
+}
+
+.allSection {
+  @include flex(column, flex-start, stretch, $spacing-6);
+}
+
+.sectionTitle {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-3;
+}
+
+.regionBlock {
+  // 지역별 블록
+}
+
+.regionLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  letter-spacing: 0.05em;
+  margin-bottom: $spacing-2;
+}
+
+.chipList {
+  @include flex(row, flex-start, center);
+  flex-wrap: wrap;
+  gap: $spacing-2;
+}
+
+.chip {
+  @include button-reset;
+  @include flex(row, flex-start, center, $spacing-1);
+  padding: $spacing-2 $spacing-3;
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-primary-50;
+    color: $color-primary-700;
+    border-color: $color-primary-200;
+  }
+
+  &.chipActive {
+    background: $color-primary-600;
+    color: white;
+    border-color: $color-primary-600;
+
+    &:hover {
+      background: $color-primary-700;
+      border-color: $color-primary-700;
+    }
+  }
+}
+
+.chipRemove {
+  font-size: $font-size-xs;
+  opacity: 0.7;
+  margin-left: $spacing-1;
+}
+
+.empty {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  font-style: italic;
+}

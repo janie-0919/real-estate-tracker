@@ -17,8 +17,15 @@ const app = express();
 const PORT = process.env.PORT ?? 3001;
 
 // ── Middleware ────────────────────────────────────────────────────
+// 로컬 개발 시 Vite(5173)·Next.js(3000) 등 여러 포트에서 접근할 수 있어
+// CORS_ORIGIN이 명시되지 않으면 흔히 쓰는 localhost 포트들을 모두 허용한다.
+const DEFAULT_DEV_ORIGINS = ['http://localhost:3000', 'http://localhost:5173'];
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : DEFAULT_DEV_ORIGINS;
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  origin: corsOrigin,
   credentials: true,
 }));
 app.use(express.json());
