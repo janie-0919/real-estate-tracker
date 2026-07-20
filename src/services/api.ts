@@ -17,9 +17,17 @@ class ApiError extends Error {
   }
 }
 
+// 서버 컴포넌트(SSR)에서는 window가 없으므로 배포 환경의 origin을 직접 구성
+function getServerOrigin(): string {
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return `http://localhost:${process.env.PORT ?? 3000}`;
+}
+
 async function request<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
-  // BASE가 절대 URL이면 그대로, 상대 경로면 현재 origin 기준으로 생성
-  const base = BASE.startsWith('http') ? BASE : `${window.location.origin}${BASE}`;
+  // BASE가 절대 URL이면 그대로, 상대 경로면 현재 origin(브라우저) 또는 배포 origin(서버) 기준으로 생성
+  const base = BASE.startsWith('http')
+    ? BASE
+    : `${typeof window !== 'undefined' ? window.location.origin : getServerOrigin()}${BASE}`;
   const url = new URL(`${base}${path}`);
 
   if (params) {

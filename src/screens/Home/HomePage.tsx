@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Link, useNavigate } from '@/compat/router';
-import type { RealTransaction } from '@/services/api';
+import type { RealTransaction, DashboardData } from '@/services/api';
 import { parseSearchQuery, buildListingsUrl } from '@/utils/search';
 import { formatPrice } from '@/utils/format';
 import { useDashboard } from '@/hooks/useDashboard';
@@ -24,7 +24,11 @@ function filterByDealType(txs: RealTransaction[] | undefined, tab: 'sale' | 'lea
   return txs.filter(t => t.dealType === tab).slice(0, 4);
 }
 
-export default function HomePage() {
+interface HomePageProps {
+  initialDashboard?: DashboardData;
+}
+
+export default function HomePage({ initialDashboard }: HomePageProps) {
   const [searchValue, setSearchValue] = useState('');
   const [showAllRegions, setShowAllRegions] = useState(false);
   const [gangnamTab, setGangnamTab] = useState<'sale' | 'lease' | 'monthly'>('sale');
@@ -33,7 +37,8 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   // ✅ 단 1번의 API 요청으로 대시보드 전체 데이터 수신
-  const { data: dashboard, isLoading } = useDashboard();
+  // 서버에서 미리 가져온 initialDashboard가 있으면 로딩 스켈레톤 없이 바로 실데이터로 렌더링됨
+  const { data: dashboard, isLoading } = useDashboard(initialDashboard);
 
   const districtSummary = dashboard?.districtSummary;
   const topComplexes    = dashboard?.topComplexes;
@@ -394,6 +399,59 @@ export default function HomePage() {
         ) : (
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>데이터가 없습니다.</p>
         )}
+      </section>
+
+      {/* 데이터 안내 */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>실거래가 데이터는 이렇게 만들어집니다</h2>
+        </div>
+        <p className={styles.infoText}>
+          부동산 트래커는 국토교통부 아파트 실거래가 공개시스템 API를 주기적으로 수집해
+          지역별·단지별로 집계합니다. 표시되는 금액은 등기 접수일이 아닌 <strong>신고 시점</strong> 기준이며,
+          계약 해제(취소)로 신고된 건은 통계에서 제외합니다.
+        </p>
+        <p className={styles.infoText}>
+          매매·전세·월세 세 가지 거래유형을 구분해서 보여드리며, 평균가·최고가·최저가는 이상치를
+          별도로 걸러내지 않은 원본 집계값입니다. 실제 시세 판단의 참고 자료로 활용하시되, 계약 전에는
+          국토교통부 원본 데이터와 등기부등본 등을 함께 확인하시길 권장합니다.
+        </p>
+      </section>
+
+      {/* FAQ */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>자주 묻는 질문</h2>
+        </div>
+        <dl className={styles.faqList}>
+          <div className={styles.faqItem}>
+            <dt className={styles.faqQuestion}>Q. 실거래가와 매물 호가는 어떻게 다른가요?</dt>
+            <dd className={styles.faqAnswer}>
+              실거래가는 실제로 계약이 체결되어 국토교통부에 신고된 금액이고, 부동산 매물 사이트의
+              호가는 매도인이 희망하는 가격입니다. 부동산 트래커는 신고 완료된 실거래가만 다룹니다.
+            </dd>
+          </div>
+          <div className={styles.faqItem}>
+            <dt className={styles.faqQuestion}>Q. 데이터는 얼마나 자주 업데이트되나요?</dt>
+            <dd className={styles.faqAnswer}>
+              국토교통부 공개 API의 갱신 주기에 맞춰 정기적으로 재수집합니다. 계약 신고 이후 실제
+              공개 데이터에 반영되기까지 며칠 정도 지연이 발생할 수 있습니다.
+            </dd>
+          </div>
+          <div className={styles.faqItem}>
+            <dt className={styles.faqQuestion}>Q. 계약이 취소된 거래도 통계에 포함되나요?</dt>
+            <dd className={styles.faqAnswer}>
+              아니요. 계약 해제로 신고된 건은 집계에서 제외하여, 실제 유효한 거래만 통계에 반영합니다.
+            </dd>
+          </div>
+          <div className={styles.faqItem}>
+            <dt className={styles.faqQuestion}>Q. 서울 외 지역 데이터도 볼 수 있나요?</dt>
+            <dd className={styles.faqAnswer}>
+              네. 서울 주요 구의 상세 실거래 내역과 별도로, 전국 시군구 단위의 집계 통계도 함께
+              제공합니다.
+            </dd>
+          </div>
+        </dl>
       </section>
     </div>
   );
